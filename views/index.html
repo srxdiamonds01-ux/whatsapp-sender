@@ -80,6 +80,10 @@
   .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  /* two-column layout: left = connect+messaged, right = excel&message */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  .cols .col { display: flex; flex-direction: column; min-width: 0; }
+  @media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
   .card { background: var(--card); border: 1px solid var(--card-bd); border-radius: 16px;
     padding: 20px; margin-bottom: 18px; box-shadow: var(--shadow); }
   .card h2 { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase;
@@ -203,8 +207,9 @@
     <div class="status-pill"><span class="dot" id="dot"></span><span id="statusText">Connecting...</span></div>
   </div>
 
-  <div class="grid">
-    <!-- LEFT: connection -->
+  <div class="cols">
+    <!-- LEFT column: Connect + Messaged Contacts -->
+    <div class="col">
     <div class="card" id="qrcard">
       <h2>1 · Connect WhatsApp</h2>
       <div id="qrbox"><div class="muted" id="qrHint">Generating QR...</div></div>
@@ -220,13 +225,15 @@
       <div class="muted">Scan the QR only once. The session is saved for next time.</div>
     </div>
 
-    <!-- Messaged contacts (left, under connect) -->
+    <!-- Messaged contacts (under connect, same left column) -->
     <div class="card" id="sentCard" style="display:none;">
       <h2>✅ Messaged Contacts (<span id="sentCount">0</span>)</h2>
       <div id="sentGrid" class="sent-grid"></div>
     </div>
+    </div><!-- /left col -->
 
-    <!-- RIGHT: upload + message -->
+    <!-- RIGHT column: upload + message -->
+    <div class="col">
     <div class="card">
       <h2>2 · Excel &amp; Message</h2>
       <label>Upload xlsx file</label>
@@ -253,15 +260,17 @@
       </div>
       <div id="msgInfo"></div>
 
-      <div class="row">
-        <div><label>Default country code</label><input type="text" id="country" value="91" /></div>
-        <div><label>Daily limit (0 = all)</label><input type="number" id="limit" value="0" min="0" /></div>
-      </div>
-      <div class="row">
-        <div><label>Messages per hour (max 20)</label><input type="number" id="perHour" value="15" min="1" max="20" /></div>
-        <div style="align-self:flex-end;"><div class="muted" style="padding-bottom:11px;">Evenly spread + random gap.<br>15/hour ≈ 4 min gap — ban-safe.</div></div>
-      </div>
+      <label>Default country code</label>
+      <input type="text" id="country" value="91" />
+
+      <label>Daily limit (0 = all)</label>
+      <input type="number" id="limit" value="0" min="0" />
+
+      <label>Messages per hour (max 20)</label>
+      <input type="number" id="perHour" value="15" min="1" max="20" />
+      <div class="muted" style="margin-top:6px;">Evenly spread + random gap · 15/hour ≈ 4 min gap — ban-safe.</div>
     </div>
+    </div><!-- /right col -->
   </div>
 
   <!-- AUTO-REPLY -->
@@ -274,10 +283,12 @@
     </label>
     <label>Auto-reply message</label>
     <textarea id="autoReplyText" placeholder="Auto-reply message..."></textarea>
-    <div style="display:flex; gap:8px;">
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
       <button id="saveAutoReply" class="ghost small" type="button">💾 Save auto-reply</button>
+      <button id="negDownload" class="ghost small" type="button">⬇ Not-Interested list (0)</button>
     </div>
     <div id="autoReplyInfo" class="muted"></div>
+    <div class="muted" style="margin-top:6px;">Negative replies (not interested, no thanks, band karo…) ko auto-reply nahi jata — wo alag list me save hote hain.</div>
   </div>
 
   <!-- SEND + PROGRESS -->
@@ -442,6 +453,15 @@
   }
   $("autoReplyToggle").addEventListener("change", saveAutoReply);
   $("saveAutoReply").addEventListener("click", saveAutoReply);
+
+  // ---- Not-interested (negative) list ----
+  function setNegCount(n) {
+    $("negDownload").textContent = `⬇ Not-Interested list (${n || 0})`;
+    $("negDownload").disabled = !(n > 0);
+  }
+  fetch("/negatives").then(r => r.json()).then(d => setNegCount(d.count)).catch(() => {});
+  socket.on("neg-count", (d) => setNegCount(d.count));
+  $("negDownload").addEventListener("click", () => { window.location = "/negatives/download"; });
 
   // ---- status / connection ----
   socket.on("status", (s) => {

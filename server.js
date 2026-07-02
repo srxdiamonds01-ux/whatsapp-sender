@@ -26,6 +26,7 @@ const PORT = 3000;
 const CHROME_PATH = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const UPLOAD_DIR = path.resolve("uploads");
 const RESULTS_DIR = path.resolve("results");
+const NEG_DIR = path.resolve("data", "negatives"); // not-interested replies per user
 const VIEWS = path.join(__dirname, "views");
 
 const GOOGLE_ID = process.env.GOOGLE_CLIENT_ID || "";
@@ -39,9 +40,55 @@ const DEFAULT_AUTO_REPLY =
   "Our diamond jewelry expert will be available shortly and will get back to you as soon as possible.\n\n" +
   "In the meantime, if you have any specific requirements (design, carat, certification, or budget), please feel free to share them.\n\n" +
   "Thank you for choosing SRX Diamonds.";
+
+// Negative / not-interested replies -> in par auto-reply NAHI jayega (baaki sab ko jayega).
+// Naye words add karne ho to yahan pattern jodo.
+const NEGATIVE_PATTERNS = [
+  /\bnot\s*inte?re?st(ed)?\b/i, // not interested / not intrested / not intrsted
+  /\bno\s*interest\b/i,
+  /\bno\s*thank(s| you)?\b/i, // no thanks / no thank you
+  /\bnot\s*(required|needed|interested)\b/i,
+  /\bno\s*(need|thanks)\b/i,
+  /\b(stop|unsubscribe|spam|scam|fraud)\b/i,
+  /\b(remove|delete)\s*(me|my\s*number)\b/i,
+  /\b(don'?t|do\s*not)\s*(message|msg|contact|send|call|disturb)\b/i,
+  /\bleave\s*me\b/i,
+  /\bnot\s*now\b/i,
+  /\bnahi?\s*(chahiye|chaiye|karo|bhejo|bhejna|interested)\b/i, // nahi chahiye / nahi karo
+  /\bmat\s*(bhejo|bhejna|karo|kar|karna)\b/i, // mat bhejo
+  /\bband\s*kar/i, // band karo
+  /\bblock\b/i,
+  /\bnahi\b.*\b(interest|chahiye|chaiye)\b/i,
+];
+// Pura message agar bas yahi ho (chhota "no") to bhi negative
+const NEGATIVE_EXACT = new Set(["no", "nope", "na", "nahi", "nhi", "nvm", "n", "no."]);
+
+function isNegativeReply(text) {
+  const t = String(text || "").toLowerCase().trim();
+  if (!t) return false;
+  const stripped = t.replace(/[^\w\s]/g, "").trim(); // punctuation hatao
+  if (NEGATIVE_EXACT.has(stripped)) return true;
+  return NEGATIVE_PATTERNS.some((re) => re.test(t));
+}
 // ===================================================
 
-for (const d of [UPLOAD_DIR, RESULTS_DIR]) if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+for (const d of [UPLOAD_DIR, RESULTS_DIR, NEG_DIR]) if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+
+// ---- Not-interested (negative) replies store (per user JSON) ----
+function negFile(userId) {
+  return path.join(NEG_DIR, String(userId).replace(/[^a-zA-Z0-9_-]/g, "") + ".json");
+}
+function getNegatives(userId) {
+  try { return JSON.parse(fs.readFileSync(negFile(userId), "utf8")) || []; } catch { return []; }
+}
+function addNegative(userId, rec) {
+  const list = getNegatives(userId);
+  // same number ka latest message update karo (duplicate na ho)
+  const i = list.findIndex((x) => x.number === rec.number);
+  if (i >= 0) list[i] = rec; else list.push(rec);
+  try { fs.writeFileSync(negFile(userId), JSON.stringify(list, null, 2)); } catch (_) {}
+  return list.length;
+}
 
 function googleOAuthClient() {
   return new google.auth.OAuth2(GOOGLE_ID, GOOGLE_SECRET, GOOGLE_CB);
@@ -79,19 +126,23 @@ if (googleEnabled) {
   console.log("⚪ Google login OFF (credentials .env me daalo)");
 }
 
-// ---- Auth helpers ----
+// ---- Auth helpers ---- (user db me maujood bhi ho, warna stale session se loop banta hai)
+function loggedInUser(req) {
+  return req.session && req.session.userId ? store.getUser(req.session.userId) : null;
+}
 function requireAuth(req, res, next) {
-  if (req.session && req.session.userId) return next();
+  if (loggedInUser(req)) return next();
   res.status(401).json({ error: "Login required." });
 }
 function requireAuthPage(req, res, next) {
-  if (req.session && req.session.userId) return next();
+  if (loggedInUser(req)) return next();
+  if (req.session) req.session.userId = null; // stale session saaf karo
   res.redirect("/login");
 }
 
 // ================== AUTH ROUTES ==================
 app.get("/login", (req, res) => {
-  if (req.session.userId) return res.redirect("/");
+  if (loggedInUser(req)) return res.redirect("/");
   res.sendFile(path.join(VIEWS, "login.html"));
 });
 app.get("/config", (req, res) => res.json({ googleEnabled }));
@@ -200,6 +251,19 @@ function emitTo(userId, event, data) {
   io.to(String(userId)).emit(event, data);
 }
 
+// @lid ya @c.us se ASLI phone number nikaalo (lid id nahi)
+async function resolvePhone(client, from) {
+  if (!from) return "";
+  if (from.endsWith("@c.us")) return from.replace(/@.*/, ""); // pehle se phone
+  try {
+    // @lid -> phone (whatsapp-web.js 1.34+)
+    const res = await client.getContactLidAndPhone([from]);
+    const pn = res && res[0] && res[0].pn; // e.g. "919825543618@c.us"
+    if (pn) return String(pn).replace(/@.*/, "");
+  } catch (_) {}
+  return from.replace(/@.*/, ""); // fallback (agar convert na ho)
+}
+
 // Stale Chrome lock files hatao (force-kill ke baad "browser already running" / EBUSY se bachne ke liye)
 function clearStaleLocks(safeId) {
   const base = path.join(".wwebjs_auth", "session-" + safeId);
@@ -267,6 +331,22 @@ function initWhatsApp(userId) {
       if (from.endsWith("@g.us") || from.endsWith("@newsletter") || from === "status@broadcast") return;
       if (s.autoRepliedSet.has(from)) return; // ek hi baar per person
       if (!s.waReady) { console.log(`[${userId}] auto-reply skip: client not ready`); return; }
+
+      // Negative / not-interested reply -> auto-reply mat bhejo, aur alag list me save karo
+      if (isNegativeReply(msg.body)) {
+        let name = "";
+        try {
+          const c = await msg.getContact();
+          name = c.pushname || c.name || c.shortName || "";
+        } catch (_) {}
+        const phone = await resolvePhone(client, from); // @lid -> asli phone
+        const number = "+" + String(phone).replace(/\D/g, "");
+        const count = addNegative(userId, { name, number, message: String(msg.body || ""), time: new Date().toISOString() });
+        console.log(`[${userId}] ⏭ not-interested saved (${count}): ${number} "${String(msg.body || "").slice(0, 40)}"`);
+        emitTo(userId, "log", { type: "warn", text: `⏭ Not-interested saved (${count}) — ${name || number}` });
+        emitTo(userId, "neg-count", { count });
+        return;
+      }
 
       console.log(`[${userId}] ↪ auto-reply try -> ${from}`);
       // msg.reply @lid aur @c.us dono ke liye sahi chat me bhejta hai (getChat se zyada reliable)
@@ -398,6 +478,23 @@ app.get("/download", requireAuth, (req, res) => {
   const s = getSession(req.session.userId);
   if (s.lastResultPath && fs.existsSync(s.lastResultPath)) res.download(s.lastResultPath, "numbers_result.xlsx");
   else res.status(404).send("Abhi koi result file nahi bani.");
+});
+
+// Not-interested (negative) replies -> count + xlsx download
+app.get("/negatives", requireAuth, (req, res) => {
+  res.json({ count: getNegatives(req.session.userId).length });
+});
+app.get("/negatives/download", requireAuth, (req, res) => {
+  const list = getNegatives(req.session.userId);
+  if (!list.length) return res.status(404).send("Koi not-interested reply nahi mili.");
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(
+    list.map((r) => ({ Name: r.name || "", Number: r.number || "", Message: r.message || "", Time: r.time || "" }))
+  );
+  XLSX.utils.book_append_sheet(wb, ws, "NotInterested");
+  const p = path.join(RESULTS_DIR, "not_interested_" + String(req.session.userId).replace(/[^a-zA-Z0-9_-]/g, "") + ".xlsx");
+  XLSX.writeFile(wb, p);
+  res.download(p, "not_interested.xlsx");
 });
 
 // ================== GOOGLE CONTACTS ==================
