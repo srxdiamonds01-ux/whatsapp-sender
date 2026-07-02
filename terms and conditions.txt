@@ -1,0 +1,84 @@
+planning :
+// * 1. whatsapp old number :✔
+   * 2. google account:✔
+    {all number saved in google acccount }✔
+   * 3. google account link with whatsapp ✔
+   * 4. add backup option with google account ✔
+   * 5. follow up days 30-45 days limit ✔
+   * 6. xlsx file management ;✔
+   * 7. automate the system to save number in google account {very important}✔
+
+//very important terms to use this software:
+
+
+  * login with google account;
+  * same account logined in your phoen also ;
+  * whatsapp always login in phone and using same wifi router ;
+  * set massege sending duration (mini 5)sec to (maxx 15)sec;
+  * and dont set auto reply while sending bulk massege ;
+   
+  ## make sure you follow the terms and condition 
+
+//warning/Alert;
+   
+  * you can lose your whatsaap account if not following the terms and conditions;
+  * you are an gental man make sure you are following the rules. 
+
+// server design :
+  
+
+   * load req as per the login account ;✔
+   * each user send the msg by their own whatsaap account ;✔
+         or ,
+    one professional whatsapp account to send the customer massege ;✔
+  * one man army server to handle the req ;✔
+
+
+// ui design :
+   
+
+   * user can upload the xlsx file and start the automate system :✔
+   * user need to login and also log in with their whatsapp account :✔
+ 
+// logical talk :
+  
+   * xlsx file import and save in google conatct and then start to masseging on whatsaap ✔
+
+   * whatsaap not be banned if {use all terms and conditions}✔
+
+
+// terms and conditions :(high chances to ban)👇;
+
+   * User Reports: When someone hits "Report," WhatsApp receives the last five messages sent to that chat to      review the context.
+
+   * Behavioral AI: The system monitors metadata. If a new number suddenly creates 50 groups or messages 500           people in one hour, the system bans it instantly.
+
+
+   # (fetures upcoming issues)problem :
+
+   *1.google account blast :
+   *2.30 days of running days :
+   *3.auto delete number :
+
+
+// auto reply by server :
+  
+  * Thank you for your reply ! 😊
+
+   Our diamond jewelry expert will be available shortly and will get back to you as soon as possible.
+
+   In the meantime, if you have any specific requirements (design, carat, certification, or budget), please feel      free to share them.
+
+                                                                        Thank you for choosing SRX Diamonds.
+
+
+ Now you are good to go. 
+ best regard :
+ sunny kumar😊 
+
+
+
+
+
+
+

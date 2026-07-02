@@ -1,0 +1,26 @@
+# Secrets
+.env
+
+# Dependencies
+node_modules/
+
+# Runtime / sensitive data (DO NOT COMMIT)
+# users db, sessions, Google tokens
+data/
+# saved WhatsApp login sessions
+.wwebjs_auth/
+# whatsapp-web.js cache
+.wwebjs_cache/
+# generated result xlsx (per user)
+results/
+# temp uploaded files
+uploads/
+
+# User data (privacy)
+numbers.xlsx
+numbers_result.xlsx
+
+# Logs / misc
+*.log
+.playwright-mcp/
+.DS_Store

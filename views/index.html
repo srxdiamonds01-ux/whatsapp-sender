@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WhatsApp Bulk Sender</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script>
+  // no-flash: theme apply before paint
+  document.documentElement.dataset.theme = localStorage.getItem("wa_theme") || "looksgood";
+</script>
+<style>
+  /* ============ THEMES ============ */
+  :root, [data-theme="looksgood"] {
+    --bg: linear-gradient(to bottom right, #faf5ff, #fdf2f8, #eff6ff);
+    --text: #1f2937; --muted: #6b7280;
+    --card: #ffffff; --card-bd: rgba(147,51,234,.14);
+    --shadow: 0 10px 30px rgba(147,51,234,.10);
+    --input-bg: #f9fafb; --input-bd: #e5e7eb;
+    --accent: #9333ea; --accent-grad: linear-gradient(to right, #9333ea, #db2777);
+    --on-accent: #ffffff;
+    --ghost-bg: #f3f4f6; --ghost-text: #374151;
+    --pill-bg: #f3e8ff; --track: #efe6fb;
+    --log-bg: #faf7ff; --log-bd: #eee0fb;
+  }
+  [data-theme="midnight"] {
+    --bg: linear-gradient(to bottom right, #140f26, #1a1030, #0f1030);
+    --text: #ece9f7; --muted: #9a92b5;
+    --card: #1a1430; --card-bd: #2c2350;
+    --shadow: 0 10px 30px rgba(0,0,0,.4);
+    --input-bg: #241c40; --input-bd: #362a58;
+    --accent: #a855f7; --accent-grad: linear-gradient(to right, #a855f7, #ec4899);
+    --on-accent: #ffffff;
+    --ghost-bg: #2a2148; --ghost-text: #ece9f7;
+    --pill-bg: #241c40; --track: #241c40;
+    --log-bg: #120d24; --log-bd: #2c2350;
+  }
+  [data-theme="whatsapp"] {
+    --bg: #0b141a;
+    --text: #e9edef; --muted: #8696a0;
+    --card: #111b21; --card-bd: #222d34;
+    --shadow: none;
+    --input-bg: #202c33; --input-bd: #2a3942;
+    --accent: #25d366; --accent-grad: linear-gradient(90deg, #25d366, #1ea952);
+    --on-accent: #0b141a;
+    --ghost-bg: #2a3942; --ghost-text: #e9edef;
+    --pill-bg: #202c33; --track: #202c33;
+    --log-bg: #0b141a; --log-bd: #222d34;
+  }
+  /* semantic status colors (theme-independent) */
+  :root { --ok:#16a34a; --err:#e11d48; --warn:#d97706; --info: var(--muted); --danger:#ef4444; }
+  [data-theme="midnight"], [data-theme="whatsapp"] { --ok:#34d399; --err:#fb7185; --warn:#fbbf24; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); background-attachment: fixed; color: var(--text);
+    padding: 20px; display: flex; justify-content: center; min-height: 100vh;
+    transition: background .3s, color .3s;
+  }
+  .wrap { width: 100%; max-width: 880px; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between;
+    background: var(--card); border: 1px solid var(--card-bd); border-radius: 16px;
+    padding: 12px 16px; margin-bottom: 18px; box-shadow: var(--shadow); }
+  .topbar .u { display: flex; align-items: center; gap: 10px; }
+  .topbar .u img, .topbar .u .fb { width: 38px; height: 38px; border-radius: 50%;
+    object-fit: cover; background: var(--accent-grad); color: #fff; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .topbar .u .nm { font-size: 14px; font-weight: 600; }
+  .topbar .u .em { font-size: 12px; color: var(--muted); }
+  .topbar .right { display: flex; align-items: center; gap: 10px; }
+  .logout { background: var(--ghost-bg); color: var(--ghost-text); border: 1px solid var(--card-bd);
+    border-radius: 10px; padding: 9px 15px; font-size: 13px; font-weight: 600; line-height: 1.2;
+    cursor: pointer; box-shadow: none; margin: 0; height: 38px; }
+
+  h1 { font-size: 26px; font-weight: 800; margin-bottom: 4px; letter-spacing: -.5px; }
+  h1 .grad { background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--card-bd); border-radius: 16px;
+    padding: 20px; margin-bottom: 18px; box-shadow: var(--shadow); }
+  .card h2 { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase;
+    letter-spacing: .6px; margin-bottom: 14px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 5px; font-weight: 500; }
+  input[type=text], input[type=number], textarea, input[type=file] {
+    width: 100%; background: var(--input-bg); border: 1px solid var(--input-bd); color: var(--text);
+    border-radius: 10px; padding: 11px; font-size: 14px; font-family: inherit; transition: border .15s; }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  textarea { min-height: 120px; resize: vertical; }
+  .row { display: flex; gap: 10px; } .row > div { flex: 1; }
+  button { background: var(--accent-grad); color: var(--on-accent); border: none; border-radius: 10px;
+    padding: 12px 16px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 14px; width: 100%;
+    box-shadow: 0 4px 14px rgba(147,51,234,.18); transition: transform .1s, opacity .15s; }
+  button:hover:not(:disabled) { transform: translateY(-1px); }
+  button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+  button.ghost { background: var(--ghost-bg); color: var(--ghost-text); box-shadow: none; border: 1px solid var(--card-bd); }
+  button.stop { background: var(--danger); color: #fff; box-shadow: none; }
+  button.small { width: auto; margin-top: 0; padding: 9px 13px; font-size: 13px; }
+
+  .toggle { display: flex; gap: 6px; background: var(--input-bg); padding: 4px; border-radius: 10px; margin-bottom: 4px; border: 1px solid var(--input-bd); }
+  .toggle button { flex: 1; margin: 0; background: transparent; color: var(--muted); padding: 9px; font-weight: 500; border-radius: 7px; box-shadow: none; }
+  .toggle button.active { background: var(--accent-grad); color: var(--on-accent); font-weight: 600; }
+
+  .status-pill { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500;
+    padding: 8px 14px; border-radius: 20px; background: var(--pill-bg); color: var(--text); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #9ca3af; }
+  .dot.ready { background: #22c55e; } .dot.error { background: #ef4444; }
+  .dot.qr, .dot.auth { background: #f59e0b; }
+  #qrbox { text-align: center; }
+  #qrbox img { width: 220px; height: 220px; background: #fff; padding: 8px; border-radius: 12px; box-shadow: var(--shadow); }
+  #me { display: none; align-items: center; gap: 12px; margin-top: 4px;
+    background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 12px; padding: 12px; }
+  #me img, #me .fallback { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; flex: 0 0 54px; border: 2px solid var(--accent); }
+  #me .fallback { display: flex; align-items: center; justify-content: center; background: var(--accent-grad); color: #fff; font-size: 22px; font-weight: 700; }
+  #me .who { line-height: 1.4; }
+  #me .who .nm { font-size: 15px; font-weight: 600; color: var(--text); }
+  #me .who .num { font-size: 13px; color: var(--muted); }
+  #me .who .badge { font-size: 11px; color: var(--accent); font-weight: 600; }
+  .muted { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  #fileInfo { font-size: 13px; color: var(--accent); margin-top: 10px; font-weight: 500; }
+  #msgInfo, #saveInfo { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .savebar { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .bar { height: 9px; background: var(--track); border-radius: 6px; overflow: hidden; margin: 12px 0; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--accent-grad); transition: width .3s; }
+  .counts { display: flex; gap: 18px; font-size: 13px; margin-bottom: 8px; }
+  .counts b { color: var(--ok); font-weight: 700; } .counts .f b { color: var(--err); }
+  #log { font-family: ui-monospace, "Cascadia Code", monospace; font-size: 12px; background: var(--log-bg);
+    border: 1px solid var(--log-bd); border-radius: 10px; padding: 12px; height: 240px; overflow-y: auto; white-space: pre-wrap; }
+  #log .ok { color: var(--ok); } #log .err { color: var(--err); } #log .warn { color: var(--warn); } #log .info { color: var(--muted); }
+
+  /* toggle switch */
+  .switch { display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 6px 0 4px; }
+  .switch input { display: none; }
+  .switch .slider { width: 42px; height: 24px; border-radius: 20px; background: var(--input-bd);
+    position: relative; transition: background .2s; flex: 0 0 42px; }
+  .switch .slider::before { content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; top: 3px; left: 3px; transition: transform .2s; }
+  .switch input:checked + .slider { background: var(--accent); }
+  .switch input:checked + .slider::before { transform: translateX(18px); }
+  .switch .switch-label { font-size: 13px; color: var(--text); font-weight: 500; }
+
+  /* messaged contacts grid */
+  .sent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); gap: 12px; margin-top: 4px; }
+  .sent-item { text-align: center; animation: pop .25s ease; }
+  @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .sent-item img, .sent-item .fb { width: 50px; height: 50px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--accent); display: block; margin: 0 auto; }
+  .sent-item .fb { display: flex; align-items: center; justify-content: center; background: var(--accent-grad);
+    color: #fff; font-size: 20px; font-weight: 700; }
+  .sent-item .nm { font-size: 11px; color: var(--muted); margin-top: 5px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---- theme picker ---- */
+  .theme-fab { position: relative; }
+  .theme-fab .tbtn { width: auto; margin: 0; padding: 9px 15px; font-size: 13px; font-weight: 600; line-height: 1.2;
+    height: 38px; border-radius: 10px; white-space: nowrap;
+    background: var(--ghost-bg); color: var(--ghost-text); border: 1px solid var(--card-bd); box-shadow: none; }
+  .theme-menu { position: absolute; right: 0; top: calc(100% + 8px); background: var(--card);
+    border: 1px solid var(--card-bd); border-radius: 12px; padding: 6px; box-shadow: var(--shadow);
+    display: none; z-index: 300; min-width: 180px; }
+  .theme-menu.open { display: block; }
+  .theme-menu button { display: flex; align-items: center; gap: 10px; width: 100%; margin: 0; background: transparent;
+    color: var(--text); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 500; box-shadow: none; }
+  .theme-menu button:hover { background: var(--ghost-bg); transform: none; }
+  .theme-menu button.active { background: var(--pill-bg); }
+  .sw { width: 18px; height: 18px; border-radius: 6px; flex: 0 0 18px; border: 1px solid rgba(0,0,0,.1); }
+  .sw-lg { background: linear-gradient(135deg, #9333ea, #db2777); }
+  .sw-mid { background: linear-gradient(135deg, #a855f7, #ec4899); }
+  .sw-wa { background: #25d366; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- App user bar -->
+  <div class="topbar">
+    <div class="u">
+      <div class="fb" id="uAvatar">?</div>
+      <div>
+        <div class="nm" id="uName">—</div>
+        <div class="em" id="uEmail"></div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="theme-fab">
+        <button class="tbtn" id="themeToggle" type="button">🎨 Theme</button>
+        <div class="theme-menu" id="themeMenu">
+          <button data-theme="looksgood"><span class="sw sw-lg"></span> LooksGood</button>
+          <button data-theme="midnight"><span class="sw sw-mid"></span> Midnight</button>
+          <button data-theme="whatsapp"><span class="sw sw-wa"></span> WhatsApp</button>
+        </div>
+      </div>
+      <button class="logout" id="logoutBtn">Logout</button>
+    </div>
+  </div>
+
+  <h1>WhatsApp <span class="grad">Bulk Sender</span></h1>
+  <div class="sub">Upload an xlsx, scan the QR, and send. Numbers are read automatically from the Excel file.</div>
+
+  <div class="card">
+    <div class="status-pill"><span class="dot" id="dot"></span><span id="statusText">Connecting...</span></div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: connection -->
+    <div class="card" id="qrcard">
+      <h2>1 · Connect WhatsApp</h2>
+      <div id="qrbox"><div class="muted" id="qrHint">Generating QR...</div></div>
+      <div id="me">
+        <div class="fallback" id="meAvatar">?</div>
+        <div class="who">
+          <div class="badge">● Logged in as</div>
+          <div class="nm" id="meName">—</div>
+          <div class="num" id="meNumber">—</div>
+        </div>
+      </div>
+      <button id="waLogoutBtn" class="ghost small" type="button" style="display:none; margin-top:12px;">🔌 Disconnect WhatsApp</button>
+      <div class="muted">Scan the QR only once. The session is saved for next time.</div>
+    </div>
+
+    <!-- Messaged contacts (left, under connect) -->
+    <div class="card" id="sentCard" style="display:none;">
+      <h2>✅ Messaged Contacts (<span id="sentCount">0</span>)</h2>
+      <div id="sentGrid" class="sent-grid"></div>
+    </div>
+
+    <!-- RIGHT: upload + message -->
+    <div class="card">
+      <h2>2 · Excel &amp; Message</h2>
+      <label>Upload xlsx file</label>
+      <input type="file" id="file" accept=".xlsx,.xls" />
+      <div id="fileInfo"></div>
+
+      <div class="savebar">
+        <button id="gSaveBtn" class="ghost small" type="button" disabled>☁ Save to Google Contacts</button>
+        <button id="gDelBtn" class="ghost small" type="button" disabled>🗑 Delete from Google Contacts</button>
+        <a id="gConnect" class="ghost small" href="/auth/google" style="display:none; text-decoration:none; line-height:1; padding:9px 13px; border-radius:10px;">🔗 Connect Google</a>
+      </div>
+      <div id="saveInfo"></div>
+
+      <label>Message source</label>
+      <div class="toggle">
+        <button id="tabType" class="active" type="button">✍️ Type Manually</button>
+        <button id="tabFile" type="button">📄 From File (message.txt)</button>
+      </div>
+
+      <label>Message <span style="color:var(--muted); font-weight:400;">— templates: "---" line se alag · spintax: {A|B|C}</span></label>
+      <textarea id="message" placeholder="Type your message here...&#10;&#10;Template 1&#10;---&#10;Template 2 with {Hi|Hello}"></textarea>
+      <div style="display:flex; gap:8px;">
+        <button id="reloadFile" class="ghost small" type="button" style="display:none;">🔄 Reload message.txt</button>
+      </div>
+      <div id="msgInfo"></div>
+
+      <div class="row">
+        <div><label>Default country code</label><input type="text" id="country" value="91" /></div>
+        <div><label>Daily limit (0 = all)</label><input type="number" id="limit" value="0" min="0" /></div>
+      </div>
+      <div class="row">
+        <div><label>Messages per hour (max 20)</label><input type="number" id="perHour" value="15" min="1" max="20" /></div>
+        <div style="align-self:flex-end;"><div class="muted" style="padding-bottom:11px;">Evenly spread + random gap.<br>15/hour ≈ 4 min gap — ban-safe.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTO-REPLY -->
+  <div class="card">
+    <h2>🤖 Auto-Reply</h2>
+    <label class="switch">
+      <input type="checkbox" id="autoReplyToggle" />
+      <span class="slider"></span>
+      <span class="switch-label">Auto-reply when anyone messages you (once per person)</span>
+    </label>
+    <label>Auto-reply message</label>
+    <textarea id="autoReplyText" placeholder="Auto-reply message..."></textarea>
+    <div style="display:flex; gap:8px;">
+      <button id="saveAutoReply" class="ghost small" type="button">💾 Save auto-reply</button>
+    </div>
+    <div id="autoReplyInfo" class="muted"></div>
+  </div>
+
+  <!-- SEND + PROGRESS -->
+  <div class="card">
+    <h2>3 · Send</h2>
+    <div class="counts">
+      <div>Total: <b id="cTotal">0</b></div>
+      <div>Sent: <b id="cSent">0</b></div>
+      <div class="f">Failed: <b id="cFail">0</b></div>
+    </div>
+    <div class="bar"><i id="progFill"></i></div>
+    <button id="startBtn" disabled>▶ Start Sending</button>
+    <button id="stopBtn" class="stop" style="display:none;">■ Stop</button>
+    <button id="dlBtn" class="ghost" style="display:none;">⬇ Download Result (xlsx)</button>
+    <div id="log"><span class="info">Log will appear here...</span></div>
+  </div>
+
+  <div style="text-align:center; margin: 4px 0 10px; font-size:12px; color:var(--muted);">
+    <a href="/terms" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">📜 Terms &amp; Conditions</a>
+    &nbsp;·&nbsp; Please follow the rules to keep your WhatsApp account safe.
+  </div>
+  <div style="text-align:center; margin: 0 0 24px; font-size:12px; color:var(--muted);">
+    Powered by <b style="background:var(--accent-grad); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:800;">SUGGO</b>
+    &nbsp;·&nbsp; <a href="https://srxdiamonds.com" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">srxdiamonds.com</a>
+  </div>
+</div>
+
+<script>
+  // ============ THEME PICKER ============
+  (function () {
+    const root = document.documentElement;
+    const menu = document.getElementById("themeMenu");
+    const toggle = document.getElementById("themeToggle");
+    function setTheme(t) {
+      root.dataset.theme = t;
+      localStorage.setItem("wa_theme", t);
+      menu.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.theme === t));
+    }
+    setTheme(localStorage.getItem("wa_theme") || "looksgood");
+    toggle.addEventListener("click", (e) => { e.stopPropagation(); menu.classList.toggle("open"); });
+    menu.querySelectorAll("button").forEach((b) =>
+      b.addEventListener("click", () => { setTheme(b.dataset.theme); menu.classList.remove("open"); })
+    );
+    document.addEventListener("click", (e) => { if (!e.target.closest(".theme-fab")) menu.classList.remove("open"); });
+  })();
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+  const $ = (id) => document.getElementById(id);
+  let uploaded = false, connected = false, total = 0, sent = 0, failed = 0;
+  let msgSource = "type";
+
+  function log(text, cls = "info") {
+    const el = $("log"); const line = document.createElement("div");
+    line.className = cls; line.textContent = text; el.appendChild(line); el.scrollTop = el.scrollHeight;
+  }
+  function refreshStart() { $("startBtn").disabled = !(uploaded && connected); }
+
+  // ---- App user header ----
+  fetch("/me/user").then(r => r.json()).then(u => {
+    if (!u || u.error) { window.location = "/login"; return; }
+    $("uName").textContent = u.name || "User";
+    $("uEmail").textContent = u.email || "";
+    if (u.avatar) $("uAvatar").outerHTML = '<img id="uAvatar" src="' + u.avatar + '" alt="me"/>';
+    else $("uAvatar").textContent = (u.name || "U").charAt(0).toUpperCase();
+  });
+  $("logoutBtn").addEventListener("click", async () => {
+    await fetch("/logout", { method: "POST" });
+    window.location = "/login";
+  });
+
+  // ---- Google Contacts connection state ----
+  let googleConnected = false, googleEnabled = false;
+  function refreshGoogle() {
+    fetch("/google/status").then(r => r.json()).then(d => {
+      googleEnabled = d.googleEnabled; googleConnected = d.connected;
+      if (!googleEnabled) {
+        $("gConnect").style.display = "none";
+        $("saveInfo").textContent = "Google login .env me configure nahi hai (numbers Google me save karne ke liye zaroori).";
+      } else if (!googleConnected) {
+        $("gConnect").style.display = "inline-block";  // connect prompt
+      } else {
+        $("gConnect").style.display = "none";
+      }
+    });
+  }
+  refreshGoogle();
+
+  // ---- Save uploaded numbers to Google Contacts ----
+  $("gSaveBtn").addEventListener("click", async () => {
+    if (googleEnabled && !googleConnected) { window.location = "/auth/google"; return; }
+    $("saveInfo").textContent = "Saving to Google Contacts...";
+    $("gSaveBtn").disabled = true;
+    try {
+      const res = await fetch("/contacts/google", { method: "POST" });
+      const d = await res.json();
+      if (d.error) {
+        $("saveInfo").textContent = "❌ " + d.error;
+        if (d.needConnect) $("gConnect").style.display = "inline-block";
+      } else {
+        $("saveInfo").textContent = `✅ ${d.created} numbers saved to your Google Contacts! (Phone me sync ho jayenge)`;
+        log(`Saved ${d.created} numbers to Google Contacts`, "ok");
+      }
+    } catch (e) { $("saveInfo").textContent = "❌ Network error"; }
+    $("gSaveBtn").disabled = false;
+  });
+
+  // ---- Delete uploaded numbers from Google Contacts ----
+  $("gDelBtn").addEventListener("click", async () => {
+    if (googleEnabled && !googleConnected) { window.location = "/auth/google"; return; }
+    if (!confirm("Uploaded numbers ko aapke Google Contacts se DELETE kar dein? Yeh wapas nahi aayega.")) return;
+    $("saveInfo").textContent = "Deleting from Google Contacts...";
+    $("gDelBtn").disabled = true;
+    try {
+      const res = await fetch("/contacts/google/delete", { method: "POST" });
+      const d = await res.json();
+      if (d.error) {
+        $("saveInfo").textContent = "❌ " + d.error;
+        if (d.needConnect) $("gConnect").style.display = "inline-block";
+      } else if (d.deleted === 0) {
+        $("saveInfo").textContent = "ℹ️ In numbers se koi contact match nahi hua (kuch delete nahi hua).";
+      } else {
+        $("saveInfo").textContent = `🗑 ${d.deleted} contacts deleted from your Google Contacts.`;
+        log(`Deleted ${d.deleted} contacts from Google Contacts`, "warn");
+      }
+    } catch (e) { $("saveInfo").textContent = "❌ Network error"; }
+    $("gDelBtn").disabled = false;
+  });
+
+  // ---- message source toggle ----
+  async function loadMessageFile() {
+    $("msgInfo").textContent = "Loading message.txt...";
+    try {
+      const res = await fetch("/message-file"); const data = await res.json();
+      if (data.error) { $("msgInfo").textContent = "❌ " + data.error; return; }
+      $("message").value = data.text;
+      $("msgInfo").textContent = "✅ Loaded from message.txt (you can edit before sending).";
+    } catch (e) { $("msgInfo").textContent = "❌ Could not read message.txt"; }
+  }
+  $("tabType").addEventListener("click", () => {
+    msgSource = "type"; $("tabType").classList.add("active"); $("tabFile").classList.remove("active");
+    $("reloadFile").style.display = "none"; $("msgInfo").textContent = "";
+  });
+  $("tabFile").addEventListener("click", () => {
+    msgSource = "file"; $("tabFile").classList.add("active"); $("tabType").classList.remove("active");
+    $("reloadFile").style.display = "inline-block"; loadMessageFile();
+  });
+  $("reloadFile").addEventListener("click", loadMessageFile);
+
+  // ---- auto-reply ----
+  socket.on("autoreply-state", (d) => {
+    $("autoReplyToggle").checked = !!d.enabled;
+    if (typeof d.text === "string" && document.activeElement !== $("autoReplyText")) $("autoReplyText").value = d.text;
+  });
+  function saveAutoReply() {
+    socket.emit("autoreply-set", { enabled: $("autoReplyToggle").checked, text: $("autoReplyText").value });
+    $("autoReplyInfo").textContent = $("autoReplyToggle").checked
+      ? "✅ Auto-reply ON — recipients ke reply par yeh message chala jayega."
+      : "Auto-reply OFF.";
+  }
+  $("autoReplyToggle").addEventListener("change", saveAutoReply);
+  $("saveAutoReply").addEventListener("click", saveAutoReply);
+
+  // ---- status / connection ----
+  socket.on("status", (s) => {
+    $("statusText").textContent = s.text; $("dot").className = "dot " + (s.state || "");
+    if (s.state === "ready") { connected = true; }
+    refreshStart();
+  });
+  socket.on("qr", (dataUrl) => {
+    connected = false; $("me").style.display = "none"; $("qrbox").style.display = "block";
+    $("waLogoutBtn").style.display = "none";
+    $("qrbox").innerHTML = '<img src="' + dataUrl + '" alt="QR"/>'; refreshStart();
+  });
+  socket.on("ready", () => { connected = true; $("waLogoutBtn").style.display = "inline-block"; refreshStart(); });
+  socket.on("me", (me) => {
+    connected = true; $("qrbox").style.display = "none"; $("me").style.display = "flex";
+    $("waLogoutBtn").style.display = "inline-block";
+    $("meName").textContent = me.name || "WhatsApp User"; $("meNumber").textContent = me.number || "";
+    const av = $("meAvatar");
+    if (me.avatar) av.outerHTML = '<img id="meAvatar" src="' + me.avatar + '" alt="dp"/>';
+    else av.textContent = (me.name || "?").trim().charAt(0).toUpperCase();
+    refreshStart();
+  });
+
+  // ---- disconnect WhatsApp (manual) ----
+  $("waLogoutBtn").addEventListener("click", () => {
+    if (!confirm("WhatsApp disconnect kar dein? Naya QR aayega (dobara scan karna padega).")) return;
+    $("waLogoutBtn").style.display = "none";
+    connected = false; refreshStart();
+    log("Disconnecting WhatsApp...", "warn");
+    socket.emit("wa-logout");
+  });
+
+  // ---- upload ----
+  $("file").addEventListener("change", async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const fd = new FormData(); fd.append("file", f);
+    $("fileInfo").textContent = "Uploading...";
+    try {
+      const res = await fetch("/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.error) { $("fileInfo").textContent = "❌ " + data.error; uploaded = false; }
+      else {
+        uploaded = true; total = data.count; $("cTotal").textContent = total;
+        $("gSaveBtn").disabled = false; $("gDelBtn").disabled = false;
+        const nameNote = data.nameCol ? ` | name: "${data.nameCol}"` : " | no name column";
+        $("fileInfo").textContent = `✅ ${data.count} numbers | phone: "${data.phoneCol}"${nameNote} | e.g. ${data.preview.join(", ")}`;
+        log(`Excel loaded: ${data.count} numbers (column "${data.phoneCol}")`, "ok");
+      }
+    } catch (err) { $("fileInfo").textContent = "❌ Upload failed"; }
+    refreshStart();
+  });
+
+  // ---- send ----
+  $("startBtn").addEventListener("click", () => {
+    const message = $("message").value;
+    if (!message.trim()) { log("Message is empty.", "err"); return; }
+    sent = 0; failed = 0; $("cSent").textContent = 0; $("cFail").textContent = 0; $("progFill").style.width = "0%";
+    socket.emit("start", {
+      message, source: msgSource,
+      countryCode: $("country").value.replace(/\D/g, ""),
+      perHour: Math.max(1, +$("perHour").value),
+      dailyLimit: +$("limit").value,
+    });
+  });
+  $("stopBtn").addEventListener("click", () => socket.emit("stop"));
+  $("dlBtn").addEventListener("click", () => (window.location = "/download"));
+
+  let sentProfiles = 0;
+  socket.on("send-start", (d) => {
+    total = d.total; $("cTotal").textContent = total;
+    $("startBtn").style.display = "none"; $("stopBtn").style.display = "block"; $("dlBtn").style.display = "none";
+    // reset messaged-contacts grid
+    sentProfiles = 0; $("sentGrid").innerHTML = ""; $("sentCount").textContent = 0; $("sentCard").style.display = "none";
+    log(`Sending started — ${total} numbers`, "info");
+  });
+
+  // recipient profile (photo + naam) dikhao
+  socket.on("sent-profile", (p) => {
+    $("sentCard").style.display = "block";
+    $("sentCount").textContent = ++sentProfiles;
+    const item = document.createElement("div"); item.className = "sent-item";
+    let av;
+    if (p.avatar) { av = document.createElement("img"); av.src = p.avatar; av.alt = ""; }
+    else { av = document.createElement("div"); av.className = "fb"; av.textContent = (p.name || "?").trim().charAt(0).toUpperCase(); }
+    const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = p.name || "";
+    nm.title = p.name || "";
+    item.appendChild(av); item.appendChild(nm);
+    $("sentGrid").appendChild(item);
+  });
+  socket.on("progress", (p) => {
+    const ok = p.status.includes("✅");
+    if (ok) { sent++; $("cSent").textContent = sent; } else { failed++; $("cFail").textContent = failed; }
+    $("progFill").style.width = ((p.index / p.total) * 100).toFixed(1) + "%";
+    log(`${p.index}/${p.total}  ${p.phone}  →  ${p.status}`, ok ? "ok" : "err");
+  });
+  socket.on("log", (m) => log(m.text, m.type === "error" ? "err" : m.type === "warn" ? "warn" : "info"));
+  socket.on("done", (d) => {
+    log(`🎉 Done! Sent: ${d.sent} | Failed: ${d.failed}`, "ok");
+    $("startBtn").style.display = "block"; $("stopBtn").style.display = "none"; $("dlBtn").style.display = "block";
+  });
+</script>
+</body>
+</html>

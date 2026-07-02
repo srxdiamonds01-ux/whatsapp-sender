@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login · WhatsApp Sender</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem("wa_theme") || "looksgood";</script>
+  <style>
+    :root,
+    [data-theme="looksgood"] {
+      --bg: linear-gradient(to bottom right, #faf5ff, #fdf2f8, #eff6ff);
+      --text: #1f2937;
+      --muted: #6b7280;
+      --card: #ffffff;
+      --card-bd: rgba(147, 51, 234, .14);
+      --shadow: 0 20px 50px rgba(147, 51, 234, .14);
+      --input-bg: #f9fafb;
+      --input-bd: #e5e7eb;
+      --accent: #9333ea;
+      --accent-grad: linear-gradient(to right, #9333ea, #db2777);
+      --on-accent: #fff;
+      --ghost-bg: #f3f4f6;
+    }
+
+    [data-theme="midnight"] {
+      --bg: linear-gradient(to bottom right, #140f26, #1a1030, #0f1030);
+      --text: #ece9f7;
+      --muted: #9a92b5;
+      --card: #1a1430;
+      --card-bd: #2c2350;
+      --shadow: 0 20px 50px rgba(0, 0, 0, .5);
+      --input-bg: #241c40;
+      --input-bd: #362a58;
+      --accent: #a855f7;
+      --accent-grad: linear-gradient(to right, #a855f7, #ec4899);
+      --on-accent: #fff;
+      --ghost-bg: #2a2148;
+    }
+
+    [data-theme="whatsapp"] {
+      --bg: #0b141a;
+      --text: #e9edef;
+      --muted: #8696a0;
+      --card: #111b21;
+      --card-bd: #222d34;
+      --shadow: none;
+      --input-bg: #202c33;
+      --input-bd: #2a3942;
+      --accent: #25d366;
+      --accent-grad: linear-gradient(90deg, #25d366, #1ea952);
+      --on-accent: #0b141a;
+      --ghost-bg: #2a3942;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      background-attachment: fixed;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .box {
+      width: 100%;
+      max-width: 390px;
+      background: var(--card);
+      border: 1px solid var(--card-bd);
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow: var(--shadow);
+    }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 4px;
+      letter-spacing: -.5px;
+    }
+
+    h1 .grad {
+      background: var(--accent-grad);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      margin-bottom: 22px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      background: var(--input-bg);
+      padding: 4px;
+      border-radius: 10px;
+      margin-bottom: 18px;
+      border: 1px solid var(--input-bd);
+    }
+
+    .tabs button {
+      flex: 1;
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      padding: 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .tabs button.active {
+      background: var(--accent-grad);
+      color: var(--on-accent);
+      font-weight: 600;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin: 12px 0 5px;
+      font-weight: 500;
+    }
+
+    input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--input-bd);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .primary {
+      width: 100%;
+      background: var(--accent-grad);
+      color: var(--on-accent);
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 20px;
+      box-shadow: 0 6px 18px rgba(147, 51, 234, .25);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      margin: 20px 0;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--input-bd);
+    }
+
+    .google {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #fff;
+      color: #3c4043;
+      border: 1px solid #dadce0;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .google.disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .google img {
+      width: 18px;
+      height: 18px;
+    }
+
+    .err {
+      color: #e11d48;
+      font-size: 13px;
+      text-align: center;
+      margin-top: 12px;
+      min-height: 18px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .name-field {
+      display: none;
+    }
+
+    .terms-row {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .terms-row input {
+      width: auto;
+    }
+
+    .terms-row a,
+    .terms-link a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .terms-link {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 14px;
+    }
+
+    .site-footer {
+      text-align: center; font-size: 12px; color: var(--muted);
+      margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--input-bd);
+    }
+    .site-footer b { background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800; }
+    .site-footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+    /* password show/hide */
+    .pass-wrap { position: relative; }
+    .pass-wrap input { padding-right: 44px; width: 100%; }
+    .eye {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 34px; height: 34px; padding: 0; margin: 0; background: transparent; border: none;
+      cursor: pointer; font-size: 17px; line-height: 1; opacity: .6; border-radius: 8px;
+    }
+    .eye:hover { opacity: 1; }
+    .eye.on { opacity: 1; }
+
+    /* theme picker (fixed top-right) */
+    .theme-fixed {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 300;
+    }
+
+    .theme-fab {
+      position: relative;
+    }
+
+    .tbtn {
+      padding: 9px 13px;
+      font-size: 13px;
+      font-weight: 600;
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--card-bd);
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    .theme-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      background: var(--card);
+      border: 1px solid var(--card-bd);
+      border-radius: 12px;
+      padding: 6px;
+      box-shadow: var(--shadow);
+      display: none;
+      min-width: 180px;
+    }
+
+    .theme-menu.open {
+      display: block;
+    }
+
+    .theme-menu button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      background: transparent;
+      color: var(--text);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+    }
+
+    .theme-menu button:hover {
+      background: var(--ghost-bg);
+    }
+
+    .sw {
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      flex: 0 0 18px;
+      border: 1px solid rgba(0, 0, 0, .1);
+    }
+
+    .sw-lg {
+      background: linear-gradient(135deg, #9333ea, #db2777);
+    }
+
+    .sw-mid {
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+    }
+
+    .sw-wa {
+      background: #25d366;
+    }
+   
+  </style>
+</head>
+
+<body>
+  <div class="theme-fixed">
+    <div class="theme-fab">
+      <button class="tbtn" id="themeToggle" type="button">🎨 Theme</button>
+      <div class="theme-menu" id="themeMenu">
+        <button data-theme="looksgood"><span class="sw sw-lg"></span> LooksGood</button>
+        <button data-theme="midnight"><span class="sw sw-mid"></span> Midnight</button>
+        <button data-theme="whatsapp"><span class="sw sw-wa"></span> WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="box">
+    <h1>WhatsApp <span class="grad">Sender</span></h1>
+    <div class="sub">Sign in to continue</div>
+
+    <div class="tabs">
+      <button id="tabLogin" class="active" type="button">Login</button>
+      <button id="tabReg" type="button">Register</button>
+    </div>
+
+    <form id="form">
+      <div class="name-field" id="nameField">
+        <label>Name</label>
+        <input type="text" id="name" placeholder="Your name" autocomplete="name" />
+      </div>
+      <label>Email</label>
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
+      <label>Password</label>
+      <div class="pass-wrap">
+        <input type="password" id="password" placeholder="••••••" autocomplete="current-password" required />
+        <button type="button" id="togglePass" class="eye" aria-label="Show password">👁</button>
+      </div>
+      <label class="terms-row" id="termsRow">
+        <input type="checkbox" id="agree" />
+        <span>I agree to the <a href="/terms" target="_blank">Terms &amp; Conditions</a></span>
+      </label>
+      <button class="primary" id="submitBtn" type="submit">Login</button>
+    </form>
+
+    <div class="terms-link">By continuing you agree to our <a href="/terms" target="_blank">Terms &amp; Conditions</a>
+    </div>
+
+    <div class="divider">OR</div>
+    <a class="google" id="googleBtn" href="/auth/google">
+      <img src="https://www.google.com/favicon.ico" alt="G" />
+      Continue with Google
+    </a>
+
+    <div class="err" id="err"></div>
+    <div class="hint" id="hint"></div>
+    <div class="site-footer">Powered by <b>SUGGO</b> · <a href="https://srxdiamonds.com" target="_blank">srxdiamonds.com</a></div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    // theme picker
+    (function () {
+      const root = document.documentElement, menu = $("themeMenu"), toggle = $("themeToggle");
+      function setTheme(t) {
+        root.dataset.theme = t; localStorage.setItem("wa_theme", t);
+        menu.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.theme === t));
+      }
+      setTheme(localStorage.getItem("wa_theme") || "looksgood");
+      toggle.addEventListener("click", (e) => { e.stopPropagation(); menu.classList.toggle("open"); });
+      menu.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { setTheme(b.dataset.theme); menu.classList.remove("open"); }));
+      document.addEventListener("click", (e) => { if (!e.target.closest(".theme-fab")) menu.classList.remove("open"); });
+    })();
+
+    let mode = "login";
+    fetch("/config").then(r => r.json()).then(c => {
+      if (!c.googleEnabled) {
+        const g = $("googleBtn");
+        g.classList.add("disabled"); g.removeAttribute("href");
+        g.addEventListener("click", (e) => e.preventDefault());
+        $("hint").textContent = "Google login abhi off hai (.env me credentials daalo).";
+      }
+    });
+
+    // password show / hide
+  $("togglePass").addEventListener("click", () => {
+    const p = $("password"), btn = $("togglePass");
+    const show = p.type === "password";
+    p.type = show ? "text" : "password";
+    btn.textContent = show ? "🙈" : "👁";
+    btn.classList.toggle("on", show);
+    btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+  });
+
+  $("tabLogin").addEventListener("click", () => setMode("login"));
+    $("tabReg").addEventListener("click", () => setMode("register"));
+    function setMode(m) {
+      mode = m;
+      $("tabLogin").classList.toggle("active", m === "login");
+      $("tabReg").classList.toggle("active", m === "register");
+      $("nameField").style.display = m === "register" ? "block" : "none";
+      $("termsRow").style.display = m === "register" ? "flex" : "none";
+      $("submitBtn").textContent = m === "register" ? "Create Account" : "Login";
+      $("err").textContent = "";
+    }
+
+    $("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("err").textContent = "";
+      if (mode === "register" && !$("agree").checked) {
+        $("err").textContent = "Please accept the Terms & Conditions to continue.";
+        return;
+      }
+      const body = { name: $("name").value, email: $("email").value, password: $("password").value };
+      try {
+        const res = await fetch("/" + (mode === "register" ? "register" : "login"), {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) { $("err").textContent = data.error || "Something went wrong."; return; }
+        window.location = "/";
+      } catch (err) { $("err").textContent = "Network error."; }
+    });
+  </script>
+</body>
+
+</html>
