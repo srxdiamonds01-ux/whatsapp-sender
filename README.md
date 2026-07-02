@@ -118,8 +118,8 @@ Then open **http://localhost:3000**, register / log in, and follow the on-screen
 
 | Phone | Name (optional) |
 |---|---|
-| 9631348904 | Sunny Kumar |
-| 6200430971 | Ravi |
+| 9631348900 | Sunny Kumar |
+| 6200430900 | Ravi |
 
 Numbers can be with or without country code — short numbers get the **Default country code** (UI field, default `91`).
 
