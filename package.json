@@ -1,12 +1,16 @@
 {
   "name": "whatsapp-sender",
   "version": "2.0.0",
-  "description": "WhatsApp bulk sender web app - upload xlsx, scan QR, send",
+  "description": "WhatsApp bulk sender - desktop app (Electron) + web app",
   "type": "commonjs",
-  "main": "server.js",
+  "main": "electron-main.js",
   "scripts": {
+    "app": "electron .",
     "start": "node server.js",
-    "cli": "node index.js"
+    "cli": "node index.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win",
+    "release": "npm version patch --no-git-tag-version && electron-builder --win"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -23,5 +27,47 @@
     "socket.io": "^4.7.5",
     "whatsapp-web.js": "^1.26.0",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.srxdiamonds.whatsappsender",
+    "productName": "WhatsApp Bulk Sender",
+    "asar": true,
+    "asarUnpack": [
+      "views/**",
+      "message.txt",
+      ".env"
+    ],
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!*.log",
+      "!.wwebjs_auth/**",
+      "!.wwebjs_cache/**",
+      "!uploads/**",
+      "!results/**",
+      "!data/**"
+    ],
+    "extraMetadata": {
+      "main": "electron-main.js"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "WhatsApp Bulk Sender"
+    }
   }
 }

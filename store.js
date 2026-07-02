@@ -8,15 +8,17 @@ const DB_FILE = path.join(DATA_DIR, "db.json");
 function ensure() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   if (!fs.existsSync(DB_FILE)) {
-    fs.writeFileSync(DB_FILE, JSON.stringify({ users: [], contacts: {} }, null, 2));
+    fs.writeFileSync(DB_FILE, JSON.stringify({ users: [], contacts: {}, connections: {} }, null, 2));
   }
 }
 function read() {
   ensure();
   try {
-    return JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
+    const db = JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
+    if (!db.connections) db.connections = {}; // purani db me na ho to
+    return db;
   } catch {
-    return { users: [], contacts: {} };
+    return { users: [], contacts: {}, connections: {} };
   }
 }
 function write(db) {
@@ -96,6 +98,30 @@ function clearContacts(userId) {
   write(db);
 }
 
+// ---------- Connection history (WhatsApp connect/disconnect log per user) ----------
+const CONN_MAX = 300; // sirf latest 300 events rakho
+function addConnEvent(userId, ev) {
+  // ev: { type: "connected" | "disconnected", reason?, time }
+  const db = read();
+  const list = db.connections[userId] || [];
+  list.push({ type: ev.type, reason: ev.reason || "", time: ev.time || new Date().toISOString() });
+  if (list.length > CONN_MAX) list.splice(0, list.length - CONN_MAX);
+  db.connections[userId] = list;
+  write(db);
+  return list;
+}
+function getConnEvents(userId) {
+  const db = read();
+  return db.connections[userId] || [];
+}
+function getConnSummary(userId) {
+  const list = getConnEvents(userId);
+  const connects = list.filter((e) => e.type === "connected").length;
+  const disconnects = list.filter((e) => e.type === "disconnected").length;
+  // newest first (UI ke liye)
+  return { connects, disconnects, total: list.length, events: list.slice().reverse() };
+}
+
 module.exports = {
   findUserByEmail,
   findUserByGoogleId,
@@ -106,4 +132,7 @@ module.exports = {
   getContacts,
   saveContacts,
   clearContacts,
+  addConnEvent,
+  getConnEvents,
+  getConnSummary,
 };

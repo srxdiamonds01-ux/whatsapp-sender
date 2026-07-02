@@ -1,4 +1,6 @@
-require("dotenv").config();
+// .env hamesha app-folder se padho (Electron me cwd userData hota hai, project folder nahi)
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 // Safety net: ek stray error (jaise socket abort race) se poora server na gire
 process.on("uncaughtException", (e) => console.error("⚠️ uncaughtException:", e && e.message));
@@ -17,7 +19,6 @@ const multer = require("multer");
 const XLSX = require("xlsx");
 const QRCode = require("qrcode");
 const fs = require("fs");
-const path = require("path");
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const store = require("./store");
 
@@ -34,6 +35,93 @@ const GOOGLE_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
 const GOOGLE_CB = process.env.GOOGLE_CALLBACK_URL || "http://localhost:3000/auth/google/callback";
 const googleEnabled = !!(GOOGLE_ID && GOOGLE_SECRET);
 const GOOGLE_SCOPES = ["profile", "email", "https://www.googleapis.com/auth/contacts"];
+
+// ---- Gemini AI ----
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+// Ek se zyada model: pehla fail (quota khatam / 429) ho to agla try hota hai.
+// .env me GEMINI_MODEL="a,b,c" (comma separated) de sakte ho, warna default list.
+const GEMINI_MODELS = (process.env.GEMINI_MODEL || "")
+  .split(",")
+  .map((m) => m.trim())
+  .filter(Boolean);
+if (!GEMINI_MODELS.length) {
+  GEMINI_MODELS.push("gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-flash-latest");
+}
+const geminiEnabled = !!GEMINI_API_KEY;
+// Business context (yahan edit karke apna business badal sakte ho)
+const AI_CONTEXT =
+  "You are a real sales representative at SRX Diamonds Inc — a Surat-based, IGI & GIA certified " +
+  "diamond & jewellery manufacturer (direct from manufacturer, no middleman). " +
+  "You are replying personally on WhatsApp, NOT as an AI or a bot. Read the customer's message and reply to what they actually said.\n\n" +
+  "STYLE RULES\n" +
+  "- Reply VERY SHORT: 1-2 sentences, maximum ~35 words.\n" +
+  "- Sound human and natural, like a person typing on WhatsApp. Warm, professional, never robotic.\n" +
+  "- Reply in the SAME language/script the customer used (English / Hindi / Hinglish).\n" +
+  "- Avoid predictable AI phrases like 'Hope you're doing well', 'I hope this message finds you well', 'We are pleased to...'.\n" +
+  "- Do not exaggerate or make unrealistic claims. Never invent prices, stock, or specific offers.\n" +
+  "- Maximum 1 emoji, and only if it fits naturally. No ALL CAPS.\n" +
+  "- Avoid spam words like Free, Cheapest, Buy Now, Limited Time, Guaranteed, Urgent, Exclusive Offer, Click Here.\n" +
+  "- Gently encourage sharing requirements (design, carat, certification, budget) when it fits.\n" +
+  "- WhatsApp-casual, no markdown, no bullet points, no sign-off, no links.";
+
+// Ek model par ek call. { text, error, retryable } lautata hai.
+// retryable=true matlab is model par fail hua (quota/500/network) -> agla model try karna theek hai.
+async function callGeminiModel(model, prompt, system, maxTokens) {
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+    const body = {
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      // thinkingBudget: 0 -> gemini-2.5 ka internal "thinking" band, saare tokens visible reply me (warna reply kat jata hai)
+      generationConfig: { temperature: 0.8, maxOutputTokens: maxTokens, thinkingConfig: { thinkingBudget: 0 } },
+    };
+    if (system) body.systemInstruction = { parts: [{ text: system }] };
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.error) {
+      const code = data.error.code;
+      let msg = data.error.message || "Gemini error";
+      // Ye errors is model ke hain -> agla model try karna theek hai
+      const retryable = code === 429 || code === 500 || code === 503 || code === 404;
+      if (code === 429) msg = `Free quota khatam / is model par 0 hai (${model}).`;
+      // Galat API key har model par fail karegi -> retry ka fayda nahi
+      if (code === 400 && /API key/i.test(msg)) return { text: null, error: "Gemini API key galat hai.", retryable: false };
+      console.log("Gemini API error:", code, model, data.error.message);
+      return { text: null, error: msg, retryable };
+    }
+    const parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+    const text = parts ? parts.map((p) => p.text || "").join("").trim() : "";
+    // khali reply -> shayad safety/finish issue, doosra model try kar lo
+    if (!text) return { text: null, error: "AI se khali reply mila.", retryable: true };
+    return { text, error: null, retryable: false };
+  } catch (e) {
+    console.log("Gemini call failed:", model, e.message);
+    return { text: null, error: "Network/Gemini error: " + e.message, retryable: true };
+  }
+}
+
+// returns { text, error, model } — models list par ek-ek karke try karta hai jab tak reply na mile
+// User ko simple message dikhta hai; asli technical error sirf console me jata hai.
+async function callGemini(prompt, system, maxTokens = 800) {
+  if (!GEMINI_API_KEY) return { text: null, error: "AI abhi set nahi hai." };
+  let badKey = false, lastError = "";
+  for (const model of GEMINI_MODELS) {
+    const r = await callGeminiModel(model, prompt, system, maxTokens);
+    if (r.text) return { text: r.text, error: null, model };
+    lastError = r.error || lastError;
+    if (/API key/i.test(r.error || "")) badKey = true;
+    if (!r.retryable) break; // API key galat jaise cases me aage try karna bekar
+    console.log(`Gemini: ${model} fail, agla model try kar rahe hain...`);
+  }
+  console.log("Gemini all models failed:", lastError); // asli reason sirf logs me
+  return {
+    text: null,
+    error: badKey ? "AI set nahi hai — thodi der baad try karein." : "AI is busy right now. Please try again in a moment.",
+  };
+}
 
 const DEFAULT_AUTO_REPLY =
   "Thank you for your reply ! 😊\n\n" +
@@ -145,8 +233,54 @@ app.get("/login", (req, res) => {
   if (loggedInUser(req)) return res.redirect("/");
   res.sendFile(path.join(VIEWS, "login.html"));
 });
-app.get("/config", (req, res) => res.json({ googleEnabled }));
+app.get("/config", (req, res) => res.json({ googleEnabled, geminiEnabled }));
 app.get("/terms", (req, res) => res.sendFile(path.join(VIEWS, "terms.html")));
+
+// AI: message templates generate karo (Gemini)
+app.post("/ai/templates", requireAuth, async (req, res) => {
+  if (!geminiEnabled) return res.status(400).json({ error: "Gemini API key .env me daalo (GEMINI_API_KEY)." });
+  const topic = String((req.body && req.body.topic) || "").trim() || "a warm introduction from our diamond & jewellery business";
+  // User ki apni message.txt ko style/length reference banao
+  let reference = "";
+  try { reference = fs.readFileSync(path.join(__dirname, "message.txt"), "utf8").trim(); } catch (_) {}
+
+  const system =
+    "You are an expert B2B WhatsApp copywriter for luxury diamond businesses.\n\n" +
+    "Your objective is to create messages that feel like they were personally written by a sales representative, not by an AI or marketing bot.\n\n" +
+    "STRICT RULES\n" +
+    "- Every template MUST be substantially different.\n" +
+    "- Never reuse the same greeting, sentence structure, or closing.\n" +
+    "- Avoid predictable AI phrases such as:\n" +
+    "  - Hope you're doing well\n" +
+    "  - I hope this message finds you well\n" +
+    "  - We are pleased to introduce ourselves\n" +
+    "  - We would like to take this opportunity\n" +
+    "- Use natural conversational English.\n" +
+    "- Avoid sounding like mass marketing.\n" +
+    "- Do not exaggerate or make unrealistic claims.\n" +
+    "- Do not use excessive emojis (maximum 2).\n" +
+    "- Do not use ALL CAPS.\n" +
+    "- Avoid spam trigger words like: Free, Cheapest, Buy Now, Limited Time, Guaranteed, Urgent, Exclusive Offer, Click Here.\n" +
+    "- Each template should have a different flow and CTA.\n" +
+    "- Keep every template between 90 and 160 words.\n" +
+    "- Make the business sound trustworthy, premium and professional.\n" +
+    "- Mention only factual company information provided in the prompt.\n\n" +
+    "FORMAT\n" +
+    "- Start each template with a greeting line that uses {option1|option2} spintax for variation.\n" +
+    "- End each template with a sign-off line 'SRX Diamonds Inc' followed on the next line by the website https://srxdiamonds.com .\n" +
+    "- Do NOT invent phone numbers or fake links (only use the given website).\n" +
+    "- Output ONLY the templates. Separate each template with a line containing exactly ---.\n" +
+    "- No markdown, no numbering, no extra commentary before or after.";
+
+  const prompt =
+    `Business context: ${AI_CONTEXT}\n\n` +
+    (reference ? `Reference examples — MATCH this length and quality (do not copy verbatim, write fresh):\n"""\n${reference}\n"""\n\n` : "") +
+    `Now write 3 fresh, detailed WhatsApp templates for: ${topic}`;
+
+  const { text, error } = await callGemini(prompt, system, 1600);
+  if (!text) return res.status(502).json({ error: error || "AI se reply nahi mila." });
+  res.json({ text });
+});
 
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
@@ -239,16 +373,59 @@ function getSession(userId) {
       // auto-reply (persisted)
       autoReply: saved.autoReply === true,
       autoReplyText: (typeof saved.autoReplyText === "string" && saved.autoReplyText.trim()) ? saved.autoReplyText : DEFAULT_AUTO_REPLY,
-      messagedSet: new Set(), // jinko campaign me message bheja (chatId)
+      aiReply: saved.aiReply === true, // Gemini se smart reply generate kare
       autoRepliedSet: new Set(), // jinhe ek baar auto-reply de diya
       sendTimes: [], // pichle sends ke timestamps (per-hour cap ke liye)
+      logBuffer: [], // recent log lines (refresh ke baad wapas dikhane ke liye)
+      campaign: null, // current/last campaign state (refresh par replay)
     });
   }
   return sessions.get(userId);
 }
 
+const LOG_MAX = 400; // buffer me itni hi log lines rakho
+// emit karo AUR state buffer karo taaki page refresh ke baad log + campaign wapas dikhe
 function emitTo(userId, event, data) {
+  const s = sessions.get(String(userId));
+  if (s) {
+    if (event === "log") {
+      s.logBuffer.push(data);
+      if (s.logBuffer.length > LOG_MAX) s.logBuffer.splice(0, s.logBuffer.length - LOG_MAX);
+    } else if (event === "send-start") {
+      s.campaign = { total: data.total || 0, sent: 0, failed: 0, active: true, done: false, profiles: [] };
+    } else if (event === "progress" && s.campaign) {
+      const ok = String(data.status || "").includes("✅");
+      if (ok) s.campaign.sent++; else s.campaign.failed++;
+      if (data.total) s.campaign.total = data.total;
+      // progress line ko log buffer me bhi (refresh par log page me dikhe)
+      s.logBuffer.push({ type: ok ? "ok" : "error", text: `${data.index}/${data.total}  ${data.phone}  →  ${data.status}` });
+      if (s.logBuffer.length > LOG_MAX) s.logBuffer.splice(0, s.logBuffer.length - LOG_MAX);
+    } else if (event === "sent-profile" && s.campaign) {
+      s.campaign.profiles.push(data);
+      if (s.campaign.profiles.length > 1000) s.campaign.profiles.shift();
+    } else if (event === "done" && s.campaign) {
+      s.campaign.active = false;
+      s.campaign.done = true;
+      s.campaign.sent = data.sent; s.campaign.failed = data.failed;
+      s.logBuffer.push({ type: "ok", text: `🎉 Done! Sent: ${data.sent} | Failed: ${data.failed}` });
+    }
+  }
   io.to(String(userId)).emit(event, data);
+}
+
+// WhatsApp connect/disconnect event ko DB me save karo + live UI ko bhejo
+function recordConn(userId, type, reason) {
+  try {
+    // Consecutive same-type event skip (kuch cases me logout+destroy dono 'disconnected' bhejte hain -> double count na ho)
+    const s = sessions.get(String(userId));
+    if (s) {
+      if (s.lastConnType === type) return;
+      s.lastConnType = type;
+    }
+    store.addConnEvent(userId, { type, reason: reason || "", time: new Date().toISOString() });
+    const sum = store.getConnSummary(userId);
+    io.to(String(userId)).emit("conn-event", { type, reason: reason || "", time: new Date().toISOString(), summary: { connects: sum.connects, disconnects: sum.disconnects } });
+  } catch (e) { console.log("recordConn error:", e.message); }
 }
 
 // @lid ya @c.us se ASLI phone number nikaalo (lid id nahi)
@@ -316,6 +493,7 @@ function initWhatsApp(userId) {
       s.lastMe = { name: info.pushname || "WhatsApp User", number: "+" + info.wid.user, avatar: avatar || null };
       console.log(`👤 [${userId}] WhatsApp: ${s.lastMe.name} (${s.lastMe.number})`);
       emitTo(userId, "me", s.lastMe);
+      recordConn(userId, "connected", s.lastMe.number);
     } catch (e) {
       console.log("Account info nahi mili:", e.message);
     }
@@ -349,11 +527,20 @@ function initWhatsApp(userId) {
       }
 
       console.log(`[${userId}] ↪ auto-reply try -> ${from}`);
-      // msg.reply @lid aur @c.us dono ke liye sahi chat me bhejta hai (getChat se zyada reliable)
-      await msg.reply(s.autoReplyText);
+
+      // Reply text: AI (Gemini) ON hai to customer ke message ke hisaab se generate karo, warna fixed template
+      let replyText = s.autoReplyText;
+      let via = "template";
+      if (s.aiReply && geminiEnabled) {
+        const { text: ai, error } = await callGemini(`Customer's WhatsApp message: "${String(msg.body || "")}"\n\nWrite a very short reply (1-2 sentences):`, AI_CONTEXT, 200);
+        if (ai) { replyText = ai; via = "AI"; }
+        else console.log(`[${userId}] AI reply failed (${error}) -> fixed template use kiya`);
+      }
+
+      await msg.reply(replyText);
       s.autoRepliedSet.add(from); // sirf SUCCESS ke baad mark (fail par next msg retry ho sake)
-      console.log(`[${userId}] 🤖 auto-reply sent to ${from}`);
-      emitTo(userId, "log", { type: "info", text: `🤖 Auto-reply sent to ${from.replace(/@.*/, "")}` });
+      console.log(`[${userId}] 🤖 auto-reply (${via}) sent to ${from}`);
+      emitTo(userId, "log", { type: "info", text: `🤖 Auto-reply (${via}) sent to ${from.replace(/@.*/, "")}` });
     } catch (e) {
       console.log(`[${userId}] auto-reply error:`, e && e.message);
     }
@@ -364,6 +551,7 @@ function initWhatsApp(userId) {
     console.log(`[${userId}] WhatsApp disconnected: ${reason}`);
     s.waReady = false;
     s.isSending = false; // agar sending chal rahi thi to turant roko (dead client par calls na jaye)
+    recordConn(userId, "disconnected", s.manualLogout ? "Manual disconnect" : String(reason || ""));
     // Manual disconnect (button) -> wo handler khud reinit karega, yahan double-handle mat karo
     if (s.manualLogout) return;
     s.lastMe = null;
@@ -465,7 +653,7 @@ app.post("/upload", requireAuth, upload.single("file"), (req, res) => {
 });
 
 app.get("/message-file", requireAuth, (req, res) => {
-  const p = path.resolve("message.txt");
+  const p = path.join(__dirname, "message.txt");
   if (!fs.existsSync(p)) return res.status(404).json({ error: "message.txt nahi mila." });
   try {
     res.json({ text: fs.readFileSync(p, "utf8") });
@@ -495,6 +683,12 @@ app.get("/negatives/download", requireAuth, (req, res) => {
   const p = path.join(RESULTS_DIR, "not_interested_" + String(req.session.userId).replace(/[^a-zA-Z0-9_-]/g, "") + ".xlsx");
   XLSX.writeFile(wb, p);
   res.download(p, "not_interested.xlsx");
+});
+
+// ================== CONNECTION HISTORY ==================
+// WhatsApp kitni baar connect/disconnect hua — timeline + counts
+app.get("/connections", requireAuth, (req, res) => {
+  res.json(store.getConnSummary(req.session.userId));
 });
 
 // ================== GOOGLE CONTACTS ==================
@@ -705,7 +899,6 @@ async function startSending(userId, opts) {
         await s.client.sendMessage(numberId._serialized, finalMsg);
         row.Status = "Sent ✅"; sent++;
         s.sendTimes.push(Date.now()); // hourly cap tracking
-        s.messagedSet.add(numberId._serialized); // auto-reply ke liye track
 
         // Recipient ki profile (photo + naam) UI par dikhane ke liye
         let avatar = null;
@@ -732,7 +925,8 @@ async function startSending(userId, opts) {
   }
 
   const wbOut = XLSX.utils.book_new();
-  const wsOut = XLSX.utils.json_to_sheet(s.currentRows.map(({ __phone, ...rest }) => rest));
+  // internal fields (__phone, __name) result file me na jaye
+  const wsOut = XLSX.utils.json_to_sheet(s.currentRows.map(({ __phone, __name, ...rest }) => rest));
   XLSX.utils.book_append_sheet(wbOut, wsOut, "Result");
   s.lastResultPath = path.join(RESULTS_DIR, String(userId).replace(/[^a-zA-Z0-9_-]/g, "") + ".xlsx");
   XLSX.writeFile(wbOut, s.lastResultPath);
@@ -759,7 +953,16 @@ io.on("connection", (socket) => {
   if (s.waReady) socket.emit("ready");
   else if (s.lastQr) socket.emit("qr", s.lastQr);
   if (s.lastMe) socket.emit("me", s.lastMe);
-  socket.emit("autoreply-state", { enabled: s.autoReply, text: s.autoReplyText });
+  socket.emit("autoreply-state", { enabled: s.autoReply, text: s.autoReplyText, ai: s.aiReply });
+
+  // refresh ke baad purane log + campaign progress wapas dikhao (khoye na)
+  if (s.logBuffer && s.logBuffer.length) socket.emit("log-history", s.logBuffer);
+  if (s.campaign) socket.emit("campaign-state", s.campaign);
+  // connection history summary (naya page)
+  try {
+    const sum = store.getConnSummary(userId);
+    socket.emit("conn-summary", { connects: sum.connects, disconnects: sum.disconnects });
+  } catch (_) {}
 
   // pehli baar connect -> is user ka WhatsApp client shuru karo
   if (!s.client) initWhatsApp(userId);
@@ -794,13 +997,14 @@ io.on("connection", (socket) => {
       initWhatsApp(userId); // naya QR
     }, 3000);
   });
-  socket.on("autoreply-set", ({ enabled, text }) => {
+  socket.on("autoreply-set", ({ enabled, text, ai }) => {
     s.autoReply = !!enabled;
     if (typeof text === "string" && text.trim()) s.autoReplyText = text;
+    if (typeof ai === "boolean") s.aiReply = ai && geminiEnabled;
     // Account me save karo -> server restart ke baad bhi setting yaad rahe
-    store.updateUser(userId, { autoReply: s.autoReply, autoReplyText: s.autoReplyText });
-    emitTo(userId, "log", { type: "info", text: `Auto-reply ${s.autoReply ? "ON ✅" : "OFF"}` });
-    emitTo(userId, "autoreply-state", { enabled: s.autoReply, text: s.autoReplyText });
+    store.updateUser(userId, { autoReply: s.autoReply, autoReplyText: s.autoReplyText, aiReply: s.aiReply });
+    emitTo(userId, "log", { type: "info", text: `Auto-reply ${s.autoReply ? "ON ✅" : "OFF"}${s.aiReply ? " · AI mode 🤖" : ""}` });
+    emitTo(userId, "autoreply-state", { enabled: s.autoReply, text: s.autoReplyText, ai: s.aiReply });
   });
 });
 
@@ -809,9 +1013,10 @@ server.listen(PORT, () => {
   console.log("👥 Good To Go\n");
 });
 
-// Graceful shutdown: Ctrl+C par saare WhatsApp browsers band karo (orphan Chrome na bane)
+// Graceful shutdown: saare WhatsApp browsers band karo (orphan Chrome na bane)
+// opts.exit=false -> process.exit mat karo (Electron khud quit karega)
 let shuttingDown = false;
-async function shutdown() {
+async function shutdown(opts = {}) {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log("\n🛑 Band ho raha hai — WhatsApp browsers close kar raha hun...");
@@ -821,7 +1026,10 @@ async function shutdown() {
     })
   );
   console.log("✅ Saaf band. Bye!");
-  process.exit(0);
+  if (opts.exit !== false) process.exit(0);
 }
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
+
+// Electron (electron-main.js) in functions ko use karta hai
+module.exports = { shutdown, server };

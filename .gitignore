@@ -1,26 +1,48 @@
-# Secrets
+# ===== Secrets (NEVER COMMIT) =====
 .env
+.env.local
+.env.*.local
+*.pem
+*.key
 
-# Dependencies
+# ===== Dependencies =====
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
 
-# Runtime / sensitive data (DO NOT COMMIT)
-# users db, sessions, Google tokens
+# ===== Runtime / sensitive data (DO NOT COMMIT) =====
+# users db, sessions, Google tokens, not-interested lists
 data/
-# saved WhatsApp login sessions
+# saved WhatsApp login sessions (per user)
 .wwebjs_auth/
-# whatsapp-web.js cache
+# whatsapp-web.js web cache
 .wwebjs_cache/
 # generated result xlsx (per user)
 results/
 # temp uploaded files
 uploads/
 
-# User data (privacy)
+# ===== User data (privacy) =====
 numbers.xlsx
 numbers_result.xlsx
 
-# Logs / misc
+# ===== Electron build output =====
+dist/
+out/
+build/ICON-YAHAN-DAALO.txt
+
+# ===== Logs / OS / editor junk =====
 *.log
+logs/
 .playwright-mcp/
 .DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln

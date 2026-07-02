@@ -59,31 +59,57 @@
     padding: 20px; display: flex; justify-content: center; min-height: 100vh;
     transition: background .3s, color .3s;
   }
-  .wrap { width: 100%; max-width: 880px; }
+  .wrap { width: 100%; max-width: 720px; }
 
   .topbar { display: flex; align-items: center; justify-content: space-between;
     background: var(--card); border: 1px solid var(--card-bd); border-radius: 16px;
     padding: 12px 16px; margin-bottom: 18px; box-shadow: var(--shadow); }
-  .topbar .u { display: flex; align-items: center; gap: 10px; }
-  .topbar .u img, .topbar .u .fb { width: 38px; height: 38px; border-radius: 50%;
-    object-fit: cover; background: var(--accent-grad); color: #fff; font-weight: 700;
-    display: flex; align-items: center; justify-content: center; font-size: 16px; }
-  .topbar .u .nm { font-size: 14px; font-weight: 600; }
-  .topbar .u .em { font-size: 12px; color: var(--muted); }
+  .topbar .brand { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+  .topbar .brand .logo { width: 34px; height: 34px; border-radius: 10px; background: var(--accent-grad);
+    display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .topbar .brand .t { font-size: 15px; font-weight: 800; letter-spacing: -.3px; }
+  .topbar .brand .t .grad { background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .topbar .brand .mini { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
   .topbar .right { display: flex; align-items: center; gap: 10px; }
+  .icon-btn { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--card-bd);
+    background: var(--ghost-bg); padding: 0; margin: 0; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; overflow: hidden; box-shadow: none; position: relative; }
+  .icon-btn img { width: 100%; height: 100%; object-fit: cover; }
+  .icon-btn .ini { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    background: var(--accent-grad); color: #fff; font-weight: 700; font-size: 16px; }
+  .icon-btn .ping { position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--danger); border: 2px solid var(--card); display: none; }
+  .icon-btn.needs .ping { display: block; }
   .logout { background: var(--ghost-bg); color: var(--ghost-text); border: 1px solid var(--card-bd);
-    border-radius: 10px; padding: 9px 15px; font-size: 13px; font-weight: 600; line-height: 1.2;
-    cursor: pointer; box-shadow: none; margin: 0; height: 38px; }
+    border-radius: 10px; padding: 0 15px; font-size: 13px; font-weight: 600; line-height: 1.2;
+    cursor: pointer; box-shadow: none; margin: 0; height: 40px; width: auto; }
 
-  h1 { font-size: 26px; font-weight: 800; margin-bottom: 4px; letter-spacing: -.5px; }
-  h1 .grad { background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
-  /* two-column layout: left = connect+messaged, right = excel&message */
-  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
-  .cols .col { display: flex; flex-direction: column; min-width: 0; }
-  @media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
+  /* dropdown menu (theme + nav) */
+  .fab { position: relative; }
+  .menu { position: absolute; right: 0; top: calc(100% + 8px); background: var(--card);
+    border: 1px solid var(--card-bd); border-radius: 12px; padding: 6px; box-shadow: var(--shadow);
+    display: none; z-index: 300; min-width: 210px; }
+  .menu.open { display: block; }
+  .menu button { display: flex; align-items: center; gap: 10px; width: 100%; margin: 0; background: transparent;
+    color: var(--text); padding: 11px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; box-shadow: none; text-align: left; }
+  .menu button:hover { background: var(--ghost-bg); transform: none; }
+  .menu button.active { background: var(--pill-bg); color: var(--accent); font-weight: 600; }
+  .menu .sep { height: 1px; background: var(--card-bd); margin: 5px 4px; }
+  .menu .mi { font-size: 16px; width: 20px; text-align: center; }
+  .tbtn { width: auto; margin: 0; padding: 0 14px; font-size: 13px; font-weight: 600; line-height: 1.2;
+    height: 40px; border-radius: 12px; white-space: nowrap;
+    background: var(--ghost-bg); color: var(--ghost-text); border: 1px solid var(--card-bd); box-shadow: none; }
+
+  /* page head */
+  .pagehead { margin-bottom: 16px; }
+  .pagehead h1 { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+  .pagehead h1 .grad { background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .pagehead .sub { color: var(--muted); font-size: 13px; margin-top: 3px; }
+
+  .view { display: none; animation: fade .2s ease; }
+  .view.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
   .card { background: var(--card); border: 1px solid var(--card-bd); border-radius: 16px;
     padding: 20px; margin-bottom: 18px; box-shadow: var(--shadow); }
   .card h2 { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase;
@@ -110,12 +136,12 @@
 
   .status-pill { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500;
     padding: 8px 14px; border-radius: 20px; background: var(--pill-bg); color: var(--text); }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: #9ca3af; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #9ca3af; flex: 0 0 9px; }
   .dot.ready { background: #22c55e; } .dot.error { background: #ef4444; }
   .dot.qr, .dot.auth { background: #f59e0b; }
-  #qrbox { text-align: center; }
+  #qrbox { text-align: center; margin-top: 14px; }
   #qrbox img { width: 220px; height: 220px; background: #fff; padding: 8px; border-radius: 12px; box-shadow: var(--shadow); }
-  #me { display: none; align-items: center; gap: 12px; margin-top: 4px;
+  #me { display: none; align-items: center; gap: 12px; margin-top: 14px;
     background: var(--input-bg); border: 1px solid var(--input-bd); border-radius: 12px; padding: 12px; }
   #me img, #me .fallback { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; flex: 0 0 54px; border: 2px solid var(--accent); }
   #me .fallback { display: flex; align-items: center; justify-content: center; background: var(--accent-grad); color: #fff; font-size: 22px; font-weight: 700; }
@@ -132,8 +158,15 @@
   .counts { display: flex; gap: 18px; font-size: 13px; margin-bottom: 8px; }
   .counts b { color: var(--ok); font-weight: 700; } .counts .f b { color: var(--err); }
   #log { font-family: ui-monospace, "Cascadia Code", monospace; font-size: 12px; background: var(--log-bg);
-    border: 1px solid var(--log-bd); border-radius: 10px; padding: 12px; height: 240px; overflow-y: auto; white-space: pre-wrap; }
+    border: 1px solid var(--log-bd); border-radius: 10px; padding: 12px; height: 340px; overflow-y: auto; white-space: pre-wrap; }
   #log .ok { color: var(--ok); } #log .err { color: var(--err); } #log .warn { color: var(--warn); } #log .info { color: var(--muted); }
+
+  /* account info rows */
+  .acct { display: flex; align-items: center; gap: 14px; }
+  .acct .av, .acct .av img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; flex: 0 0 60px; }
+  .acct .av { display: flex; align-items: center; justify-content: center; background: var(--accent-grad); color: #fff; font-size: 26px; font-weight: 700; }
+  .acct .info .nm { font-size: 17px; font-weight: 700; }
+  .acct .info .em { font-size: 13px; color: var(--muted); }
 
   /* toggle switch */
   .switch { display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 6px 0 4px; }
@@ -157,85 +190,82 @@
   .sent-item .nm { font-size: 11px; color: var(--muted); margin-top: 5px; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; }
 
-  /* ---- theme picker ---- */
-  .theme-fab { position: relative; }
-  .theme-fab .tbtn { width: auto; margin: 0; padding: 9px 15px; font-size: 13px; font-weight: 600; line-height: 1.2;
-    height: 38px; border-radius: 10px; white-space: nowrap;
-    background: var(--ghost-bg); color: var(--ghost-text); border: 1px solid var(--card-bd); box-shadow: none; }
-  .theme-menu { position: absolute; right: 0; top: calc(100% + 8px); background: var(--card);
-    border: 1px solid var(--card-bd); border-radius: 12px; padding: 6px; box-shadow: var(--shadow);
-    display: none; z-index: 300; min-width: 180px; }
-  .theme-menu.open { display: block; }
-  .theme-menu button { display: flex; align-items: center; gap: 10px; width: 100%; margin: 0; background: transparent;
-    color: var(--text); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 500; box-shadow: none; }
-  .theme-menu button:hover { background: var(--ghost-bg); transform: none; }
-  .theme-menu button.active { background: var(--pill-bg); }
   .sw { width: 18px; height: 18px; border-radius: 6px; flex: 0 0 18px; border: 1px solid rgba(0,0,0,.1); }
   .sw-lg { background: linear-gradient(135deg, #9333ea, #db2777); }
   .sw-mid { background: linear-gradient(135deg, #a855f7, #ec4899); }
   .sw-wa { background: #25d366; }
+
+  /* connections page */
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .stat { flex: 1; min-width: 90px; background: var(--input-bg); border: 1px solid var(--input-bd);
+    border-radius: 12px; padding: 14px; text-align: center; }
+  .stat .n { font-size: 26px; font-weight: 800; line-height: 1.1; }
+  .stat .l { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .conn-item { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--card-bd); }
+  .conn-item:last-child { border-bottom: none; }
+  .conn-item .ci { width: 34px; height: 34px; border-radius: 50%; flex: 0 0 34px; display: flex;
+    align-items: center; justify-content: center; font-size: 16px; }
+  .conn-item .ci.up { background: rgba(34,197,94,.15); } .conn-item .ci.down { background: rgba(239,68,68,.15); }
+  .conn-item .cmeta { flex: 1; min-width: 0; }
+  .conn-item .cmeta .ct { font-size: 14px; font-weight: 600; }
+  .conn-item .cmeta .cr { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .conn-item .ctime { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+  .footer { text-align:center; font-size:12px; color:var(--muted); margin: 6px 0 24px; }
+  .footer a { color:var(--accent); text-decoration:none; font-weight:600; }
+  .footer .suggo { background:var(--accent-grad); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:800; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <!-- App user bar -->
+  <!-- ============ TOP BAR ============ -->
   <div class="topbar">
-    <div class="u">
-      <div class="fb" id="uAvatar">?</div>
+    <div class="brand" id="brandHome">
+      <div class="logo">💬</div>
       <div>
-        <div class="nm" id="uName">—</div>
-        <div class="em" id="uEmail"></div>
+        <div class="t">WhatsApp <span class="grad">Sender</span></div>
+        <div class="mini"><span class="dot" id="navDot"></span><span id="navConn">Connecting…</span></div>
       </div>
     </div>
     <div class="right">
-      <div class="theme-fab">
-        <button class="tbtn" id="themeToggle" type="button">🎨 Theme</button>
-        <div class="theme-menu" id="themeMenu">
+      <!-- Theme -->
+      <div class="fab">
+        <button class="tbtn" id="themeToggle" type="button">🎨</button>
+        <div class="menu" id="themeMenu">
           <button data-theme="looksgood"><span class="sw sw-lg"></span> LooksGood</button>
           <button data-theme="midnight"><span class="sw sw-mid"></span> Midnight</button>
           <button data-theme="whatsapp"><span class="sw sw-wa"></span> WhatsApp</button>
         </div>
       </div>
-      <button class="logout" id="logoutBtn">Logout</button>
-    </div>
-  </div>
-
-  <h1>WhatsApp <span class="grad">Bulk Sender</span></h1>
-  <div class="sub">Upload an xlsx, scan the QR, and send. Numbers are read automatically from the Excel file.</div>
-
-  <div class="card">
-    <div class="status-pill"><span class="dot" id="dot"></span><span id="statusText">Connecting...</span></div>
-  </div>
-
-  <div class="cols">
-    <!-- LEFT column: Connect + Messaged Contacts -->
-    <div class="col">
-    <div class="card" id="qrcard">
-      <h2>1 · Connect WhatsApp</h2>
-      <div id="qrbox"><div class="muted" id="qrHint">Generating QR...</div></div>
-      <div id="me">
-        <div class="fallback" id="meAvatar">?</div>
-        <div class="who">
-          <div class="badge">● Logged in as</div>
-          <div class="nm" id="meName">—</div>
-          <div class="num" id="meNumber">—</div>
+      <!-- Profile / navigation -->
+      <div class="fab">
+        <button class="icon-btn" id="profileBtn" type="button" title="Menu">
+          <span class="ini" id="navAvatar">?</span>
+          <span class="ping"></span>
+        </button>
+        <div class="menu" id="navMenu">
+          <button data-view="home"><span class="mi">🏠</span> Home</button>
+          <button data-view="profile"><span class="mi">👤</span> Profile &amp; WhatsApp</button>
+          <button data-view="campaign"><span class="mi">📊</span> Campaign Info</button>
+          <button data-view="connections"><span class="mi">🔌</span> Connections</button>
+          <button data-view="logs"><span class="mi">📜</span> Logs</button>
+          <div class="sep"></div>
+          <button id="logoutBtn"><span class="mi">🚪</span> Logout</button>
         </div>
       </div>
-      <button id="waLogoutBtn" class="ghost small" type="button" style="display:none; margin-top:12px;">🔌 Disconnect WhatsApp</button>
-      <div class="muted">Scan the QR only once. The session is saved for next time.</div>
+    </div>
+  </div>
+
+  <!-- ============ VIEW: HOME ============ -->
+  <section class="view active" id="view-home">
+    <div class="pagehead">
+      <h1>Send a <span class="grad">Campaign</span></h1>
+      <div class="sub">Upload your Excel, write your message, and start. Rate limit &amp; WhatsApp connection are in <a href="#" id="goProfile1" style="color:var(--accent); text-decoration:none; font-weight:600;">Profile</a>.</div>
     </div>
 
-    <!-- Messaged contacts (under connect, same left column) -->
-    <div class="card" id="sentCard" style="display:none;">
-      <h2>✅ Messaged Contacts (<span id="sentCount">0</span>)</h2>
-      <div id="sentGrid" class="sent-grid"></div>
-    </div>
-    </div><!-- /left col -->
-
-    <!-- RIGHT column: upload + message -->
-    <div class="col">
+    <!-- Excel & Message -->
     <div class="card">
-      <h2>2 · Excel &amp; Message</h2>
+      <h2>📄 Excel &amp; Message</h2>
       <label>Upload xlsx file</label>
       <input type="file" id="file" accept=".xlsx,.xls" />
       <div id="fileInfo"></div>
@@ -255,11 +285,93 @@
 
       <label>Message <span style="color:var(--muted); font-weight:400;">— templates: "---" line se alag · spintax: {A|B|C}</span></label>
       <textarea id="message" placeholder="Type your message here...&#10;&#10;Template 1&#10;---&#10;Template 2 with {Hi|Hello}"></textarea>
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button id="reloadFile" class="ghost small" type="button" style="display:none;">🔄 Reload message.txt</button>
       </div>
+      <!-- AI template generator (Gemini) -->
+      <div id="aiGenBox" style="display:none; margin-top:10px; padding:12px; border:1px dashed var(--accent); border-radius:10px;">
+        <label style="margin-top:0;">✨ Generate templates with AI</label>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <input type="text" id="aiTopic" placeholder="Topic e.g. diamond ring intro for wholesalers" style="flex:1; min-width:180px;" />
+          <button id="aiGenBtn" class="ghost small" type="button" style="white-space:nowrap;">✨ Generate</button>
+        </div>
+        <div id="aiGenInfo" class="muted" style="margin-top:6px;">AI 3 templates banayega (spintax ke sath) → seedha message box me.</div>
+      </div>
       <div id="msgInfo"></div>
+    </div>
 
+    <!-- AUTO-REPLY -->
+    <div class="card">
+      <h2>🤖 Auto-Reply</h2>
+      <label class="switch">
+        <input type="checkbox" id="autoReplyToggle" />
+        <span class="slider"></span>
+        <span class="switch-label">Auto-reply when anyone messages you (once per person)</span>
+      </label>
+      <label class="switch" id="aiToggleRow" style="display:none;">
+        <input type="checkbox" id="aiReplyToggle" />
+        <span class="slider"></span>
+        <span class="switch-label">🤖 AI reply (Gemini) — customer ke message ka smart reply banaye (warna neeche wala fixed text)</span>
+      </label>
+      <label>Auto-reply message <span style="color:var(--muted); font-weight:400;">(AI OFF ho to yeh jayega, ya AI fail hone par fallback)</span></label>
+      <textarea id="autoReplyText" placeholder="Auto-reply message..."></textarea>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button id="saveAutoReply" class="ghost small" type="button">💾 Save auto-reply</button>
+        <button id="negDownload" class="ghost small" type="button">⬇ Not-Interested list (0)</button>
+      </div>
+      <div id="autoReplyInfo" class="muted"></div>
+      <div class="muted" style="margin-top:6px;">Negative replies (not interested, no thanks, band karo…) ko auto-reply nahi jata — wo alag list me save hote hain.</div>
+    </div>
+
+    <!-- START -->
+    <div class="card">
+      <div class="counts" style="margin-bottom:4px;">
+        <div>Total loaded: <b id="cTotal" style="color:var(--accent);">0</b></div>
+      </div>
+      <button id="startBtn" disabled>▶ Start Sending</button>
+      <div class="muted" id="startHint" style="margin-top:8px;"></div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW: PROFILE (account + whatsapp + settings) ============ -->
+  <section class="view" id="view-profile">
+    <div class="pagehead">
+      <h1><span class="grad">Profile</span> &amp; Settings</h1>
+      <div class="sub">Your account, WhatsApp connection, and sending speed.</div>
+    </div>
+
+    <!-- Account info -->
+    <div class="card">
+      <h2>👤 Account Info</h2>
+      <div class="acct">
+        <div class="av" id="uAvatar">?</div>
+        <div class="info">
+          <div class="nm" id="uName">—</div>
+          <div class="em" id="uEmail"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WhatsApp connection -->
+    <div class="card" id="qrcard">
+      <h2>💬 WhatsApp Connection</h2>
+      <div class="status-pill"><span class="dot" id="dot"></span><span id="statusText">Connecting...</span></div>
+      <div id="qrbox"><div class="muted" id="qrHint">Generating QR...</div></div>
+      <div id="me">
+        <div class="fallback" id="meAvatar">?</div>
+        <div class="who">
+          <div class="badge">● Logged in as</div>
+          <div class="nm" id="meName">—</div>
+          <div class="num" id="meNumber">—</div>
+        </div>
+      </div>
+      <button id="waLogoutBtn" class="ghost small" type="button" style="display:none; margin-top:12px;">🔌 Disconnect WhatsApp</button>
+      <div class="muted">Scan the QR only once. The session is saved for next time.</div>
+    </div>
+
+    <!-- Sending settings (rate limit) -->
+    <div class="card">
+      <h2>⚙️ Sending Settings</h2>
       <label>Default country code</label>
       <input type="text" id="country" value="91" />
 
@@ -270,49 +382,71 @@
       <input type="number" id="perHour" value="15" min="1" max="20" />
       <div class="muted" style="margin-top:6px;">Evenly spread + random gap · 15/hour ≈ 4 min gap — ban-safe.</div>
     </div>
-    </div><!-- /right col -->
-  </div>
+  </section>
 
-  <!-- AUTO-REPLY -->
-  <div class="card">
-    <h2>🤖 Auto-Reply</h2>
-    <label class="switch">
-      <input type="checkbox" id="autoReplyToggle" />
-      <span class="slider"></span>
-      <span class="switch-label">Auto-reply when anyone messages you (once per person)</span>
-    </label>
-    <label>Auto-reply message</label>
-    <textarea id="autoReplyText" placeholder="Auto-reply message..."></textarea>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <button id="saveAutoReply" class="ghost small" type="button">💾 Save auto-reply</button>
-      <button id="negDownload" class="ghost small" type="button">⬇ Not-Interested list (0)</button>
+  <!-- ============ VIEW: CAMPAIGN INFO ============ -->
+  <section class="view" id="view-campaign">
+    <div class="pagehead">
+      <h1>Campaign <span class="grad">Info</span></h1>
+      <div class="sub">Live sending progress and everyone you've messaged this run.</div>
     </div>
-    <div id="autoReplyInfo" class="muted"></div>
-    <div class="muted" style="margin-top:6px;">Negative replies (not interested, no thanks, band karo…) ko auto-reply nahi jata — wo alag list me save hote hain.</div>
-  </div>
 
-  <!-- SEND + PROGRESS -->
-  <div class="card">
-    <h2>3 · Send</h2>
-    <div class="counts">
-      <div>Total: <b id="cTotal">0</b></div>
-      <div>Sent: <b id="cSent">0</b></div>
-      <div class="f">Failed: <b id="cFail">0</b></div>
+    <div class="card">
+      <h2>📊 Progress</h2>
+      <div class="counts">
+        <div>Total: <b id="cTotal2">0</b></div>
+        <div>Sent: <b id="cSent">0</b></div>
+        <div class="f">Failed: <b id="cFail">0</b></div>
+      </div>
+      <div class="bar"><i id="progFill"></i></div>
+      <button id="stopBtn" class="stop" style="display:none;">■ Stop</button>
+      <button id="dlBtn" class="ghost" style="display:none;">⬇ Download Result (xlsx)</button>
+      <div class="muted" id="campHint" style="margin-top:8px;">Start a send from the Home page — progress shows here.</div>
     </div>
-    <div class="bar"><i id="progFill"></i></div>
-    <button id="startBtn" disabled>▶ Start Sending</button>
-    <button id="stopBtn" class="stop" style="display:none;">■ Stop</button>
-    <button id="dlBtn" class="ghost" style="display:none;">⬇ Download Result (xlsx)</button>
-    <div id="log"><span class="info">Log will appear here...</span></div>
-  </div>
 
-  <div style="text-align:center; margin: 4px 0 10px; font-size:12px; color:var(--muted);">
-    <a href="/terms" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">📜 Terms &amp; Conditions</a>
-    &nbsp;·&nbsp; Please follow the rules to keep your WhatsApp account safe.
-  </div>
-  <div style="text-align:center; margin: 0 0 24px; font-size:12px; color:var(--muted);">
-    Powered by <b style="background:var(--accent-grad); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:800;">SUGGO</b>
-    &nbsp;·&nbsp; <a href="https://srxdiamonds.com" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">srxdiamonds.com</a>
+    <div class="card" id="sentCard" style="display:none;">
+      <h2>✅ Messaged Contacts (<span id="sentCount">0</span>)</h2>
+      <div id="sentGrid" class="sent-grid"></div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW: CONNECTIONS ============ -->
+  <section class="view" id="view-connections">
+    <div class="pagehead">
+      <h1>WhatsApp <span class="grad">Connections</span></h1>
+      <div class="sub">How many times your WhatsApp connected / disconnected, with time.</div>
+    </div>
+
+    <div class="card">
+      <h2>🔌 Summary</h2>
+      <div class="stat-row">
+        <div class="stat"><div class="n" id="connN" style="color:var(--ok);">0</div><div class="l">Connected</div></div>
+        <div class="stat"><div class="n" id="disconnN" style="color:var(--err);">0</div><div class="l">Disconnected</div></div>
+        <div class="stat"><div class="n" id="connTotal">0</div><div class="l">Total events</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🕓 History</h2>
+      <div id="connList"><div class="muted">No connection events yet.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ VIEW: LOGS ============ -->
+  <section class="view" id="view-logs">
+    <div class="pagehead">
+      <h1><span class="grad">Logs</span></h1>
+      <div class="sub">Real-time activity log.</div>
+    </div>
+    <div class="card">
+      <h2>📜 Activity Log</h2>
+      <div id="log"><span class="info">Log will appear here...</span></div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <div><a href="/terms" target="_blank">📜 Terms &amp; Conditions</a> &nbsp;·&nbsp; Follow the rules to keep your WhatsApp account safe.</div>
+    <div style="margin-top:4px;">Powered by <b class="suggo">SUGGO</b> &nbsp;·&nbsp; <a href="https://srxdiamonds.com" target="_blank">srxdiamonds.com</a></div>
   </div>
 </div>
 
@@ -332,7 +466,25 @@
     menu.querySelectorAll("button").forEach((b) =>
       b.addEventListener("click", () => { setTheme(b.dataset.theme); menu.classList.remove("open"); })
     );
-    document.addEventListener("click", (e) => { if (!e.target.closest(".theme-fab")) menu.classList.remove("open"); });
+    document.addEventListener("click", (e) => { if (!e.target.closest(".fab")) menu.classList.remove("open"); });
+  })();
+
+  // ============ VIEW ROUTER + PROFILE MENU ============
+  (function () {
+    const navMenu = document.getElementById("navMenu");
+    const profileBtn = document.getElementById("profileBtn");
+    window.showView = function (name) {
+      document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + name));
+      navMenu.querySelectorAll("button[data-view]").forEach((b) => b.classList.toggle("active", b.dataset.view === name));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    profileBtn.addEventListener("click", (e) => { e.stopPropagation(); navMenu.classList.toggle("open"); });
+    navMenu.querySelectorAll("button[data-view]").forEach((b) =>
+      b.addEventListener("click", () => { showView(b.dataset.view); navMenu.classList.remove("open"); })
+    );
+    document.addEventListener("click", (e) => { if (!e.target.closest(".fab")) navMenu.classList.remove("open"); });
+    document.getElementById("brandHome").addEventListener("click", () => showView("home"));
+    document.getElementById("goProfile1").addEventListener("click", (e) => { e.preventDefault(); showView("profile"); });
   })();
 </script>
 
@@ -347,15 +499,35 @@
     const el = $("log"); const line = document.createElement("div");
     line.className = cls; line.textContent = text; el.appendChild(line); el.scrollTop = el.scrollHeight;
   }
-  function refreshStart() { $("startBtn").disabled = !(uploaded && connected); }
+  function typeToCls(t) { return t === "ok" ? "ok" : (t === "error" || t === "err") ? "err" : t === "warn" ? "warn" : "info"; }
+  // refresh ke baad purana log wapas (server buffer se)
+  socket.on("log-history", (arr) => {
+    const el = $("log"); el.innerHTML = "";
+    (arr || []).forEach((m) => log(m.text, typeToCls(m.type)));
+  });
+  function refreshStart() {
+    $("startBtn").disabled = !(uploaded && connected);
+    let hint = "";
+    if (!connected && !uploaded) hint = "⚠️ Connect WhatsApp (Profile) and upload an Excel file first.";
+    else if (!connected) hint = "⚠️ WhatsApp not connected — open Profile → scan the QR.";
+    else if (!uploaded) hint = "⚠️ Upload an Excel file above to enable sending.";
+    else hint = "✅ Ready to send.";
+    $("startHint").textContent = hint;
+  }
 
   // ---- App user header ----
   fetch("/me/user").then(r => r.json()).then(u => {
     if (!u || u.error) { window.location = "/login"; return; }
     $("uName").textContent = u.name || "User";
     $("uEmail").textContent = u.email || "";
-    if (u.avatar) $("uAvatar").outerHTML = '<img id="uAvatar" src="' + u.avatar + '" alt="me"/>';
-    else $("uAvatar").textContent = (u.name || "U").charAt(0).toUpperCase();
+    const ini = (u.name || "U").charAt(0).toUpperCase();
+    if (u.avatar) {
+      $("uAvatar").outerHTML = '<div class="av"><img src="' + u.avatar + '" alt="me"/></div>';
+      $("navAvatar").outerHTML = '<img id="navAvatar" src="' + u.avatar + '" alt="me"/>';
+    } else {
+      $("uAvatar").textContent = ini;
+      $("navAvatar").textContent = ini;
+    }
   });
   $("logoutBtn").addEventListener("click", async () => {
     await fetch("/logout", { method: "POST" });
@@ -440,19 +612,53 @@
   });
   $("reloadFile").addEventListener("click", loadMessageFile);
 
+  // ---- AI (Gemini) availability ----
+  let geminiEnabled = false;
+  fetch("/config").then(r => r.json()).then(c => {
+    geminiEnabled = !!c.geminiEnabled;
+    if (geminiEnabled) {
+      $("aiToggleRow").style.display = "flex";
+      $("aiGenBox").style.display = "block";
+    }
+  }).catch(() => {});
+
   // ---- auto-reply ----
   socket.on("autoreply-state", (d) => {
     $("autoReplyToggle").checked = !!d.enabled;
+    $("aiReplyToggle").checked = !!d.ai;
     if (typeof d.text === "string" && document.activeElement !== $("autoReplyText")) $("autoReplyText").value = d.text;
   });
   function saveAutoReply() {
-    socket.emit("autoreply-set", { enabled: $("autoReplyToggle").checked, text: $("autoReplyText").value });
+    socket.emit("autoreply-set", { enabled: $("autoReplyToggle").checked, text: $("autoReplyText").value, ai: $("aiReplyToggle").checked });
     $("autoReplyInfo").textContent = $("autoReplyToggle").checked
-      ? "✅ Auto-reply ON — recipients ke reply par yeh message chala jayega."
+      ? ($("aiReplyToggle").checked ? "✅ Auto-reply ON · AI mode 🤖 — Gemini smart reply banayega." : "✅ Auto-reply ON — fixed message jayega.")
       : "Auto-reply OFF.";
   }
   $("autoReplyToggle").addEventListener("change", saveAutoReply);
+  $("aiReplyToggle").addEventListener("change", () => {
+    // AI ON karte hi auto-reply bhi ON (warna AI ka koi asar nahi hota)
+    if ($("aiReplyToggle").checked) $("autoReplyToggle").checked = true;
+    saveAutoReply();
+  });
   $("saveAutoReply").addEventListener("click", saveAutoReply);
+
+  // ---- AI template generator ----
+  $("aiGenBtn").addEventListener("click", async () => {
+    const topic = $("aiTopic").value.trim();
+    $("aiGenInfo").textContent = "✨ Generating with AI...";
+    $("aiGenBtn").disabled = true;
+    try {
+      const res = await fetch("/ai/templates", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic }) });
+      const d = await res.json();
+      if (d.error) { $("aiGenInfo").textContent = "❌ " + d.error; }
+      else {
+        $("message").value = d.text;
+        $("aiGenInfo").textContent = "✅ Templates generated — message box me daal diye (edit kar sakte ho).";
+        log("AI generated message templates", "ok");
+      }
+    } catch (e) { $("aiGenInfo").textContent = "❌ Network error"; }
+    $("aiGenBtn").disabled = false;
+  });
 
   // ---- Not-interested (negative) list ----
   function setNegCount(n) {
@@ -463,22 +669,62 @@
   socket.on("neg-count", (d) => setNegCount(d.count));
   $("negDownload").addEventListener("click", () => { window.location = "/negatives/download"; });
 
+  // ---- Connections history (connect/disconnect track) ----
+  function fmtTime(iso) { try { return new Date(iso).toLocaleString(); } catch (e) { return iso || ""; } }
+  function renderConnList(events) {
+    const box = $("connList");
+    if (!events || !events.length) { box.innerHTML = '<div class="muted">No connection events yet.</div>'; return; }
+    box.innerHTML = "";
+    events.forEach((e) => {
+      const up = e.type === "connected";
+      const row = document.createElement("div"); row.className = "conn-item";
+      const ic = document.createElement("div"); ic.className = "ci " + (up ? "up" : "down"); ic.textContent = up ? "🟢" : "🔴";
+      const meta = document.createElement("div"); meta.className = "cmeta";
+      const ct = document.createElement("div"); ct.className = "ct"; ct.textContent = up ? "Connected" : "Disconnected";
+      meta.appendChild(ct);
+      if (e.reason) { const cr = document.createElement("div"); cr.className = "cr"; cr.textContent = e.reason; cr.title = e.reason; meta.appendChild(cr); }
+      const tm = document.createElement("div"); tm.className = "ctime"; tm.textContent = fmtTime(e.time);
+      row.appendChild(ic); row.appendChild(meta); row.appendChild(tm);
+      box.appendChild(row);
+    });
+  }
+  function loadConnections() {
+    fetch("/connections").then(r => r.json()).then(d => {
+      $("connN").textContent = d.connects || 0;
+      $("disconnN").textContent = d.disconnects || 0;
+      $("connTotal").textContent = d.total || 0;
+      renderConnList(d.events || []);
+    }).catch(() => {});
+  }
+  loadConnections();
+  socket.on("conn-summary", (d) => { $("connN").textContent = d.connects || 0; $("disconnN").textContent = d.disconnects || 0; });
+  socket.on("conn-event", () => loadConnections()); // live: naya connect/disconnect aaye to list refresh
+
   // ---- status / connection ----
+  function setConn(state, text) {
+    $("navDot").className = "dot " + (state || "");
+    $("navConn").textContent = text;
+    // profile badge: red ping when NOT connected
+    $("profileBtn").classList.toggle("needs", state !== "ready");
+  }
   socket.on("status", (s) => {
     $("statusText").textContent = s.text; $("dot").className = "dot " + (s.state || "");
+    setConn(s.state, s.state === "ready" ? "Connected" : s.text);
     if (s.state === "ready") { connected = true; }
     refreshStart();
   });
   socket.on("qr", (dataUrl) => {
     connected = false; $("me").style.display = "none"; $("qrbox").style.display = "block";
     $("waLogoutBtn").style.display = "none";
+    setConn("qr", "Scan QR in Profile");
     $("qrbox").innerHTML = '<img src="' + dataUrl + '" alt="QR"/>'; refreshStart();
   });
-  socket.on("ready", () => { connected = true; $("waLogoutBtn").style.display = "inline-block"; refreshStart(); });
+  socket.on("ready", () => { connected = true; $("waLogoutBtn").style.display = "inline-block"; setConn("ready", "Connected"); refreshStart(); });
   socket.on("me", (me) => {
     connected = true; $("qrbox").style.display = "none"; $("me").style.display = "flex";
     $("waLogoutBtn").style.display = "inline-block";
     $("meName").textContent = me.name || "WhatsApp User"; $("meNumber").textContent = me.number || "";
+    setConn("ready", "Connected");
     const av = $("meAvatar");
     if (me.avatar) av.outerHTML = '<img id="meAvatar" src="' + me.avatar + '" alt="dp"/>';
     else av.textContent = (me.name || "?").trim().charAt(0).toUpperCase();
@@ -504,7 +750,8 @@
       const data = await res.json();
       if (data.error) { $("fileInfo").textContent = "❌ " + data.error; uploaded = false; }
       else {
-        uploaded = true; total = data.count; $("cTotal").textContent = total;
+        uploaded = true; total = data.count;
+        $("cTotal").textContent = total; $("cTotal2").textContent = total;
         $("gSaveBtn").disabled = false; $("gDelBtn").disabled = false;
         const nameNote = data.nameCol ? ` | name: "${data.nameCol}"` : " | no name column";
         $("fileInfo").textContent = `✅ ${data.count} numbers | phone: "${data.phoneCol}"${nameNote} | e.g. ${data.preview.join(", ")}`;
@@ -517,7 +764,7 @@
   // ---- send ----
   $("startBtn").addEventListener("click", () => {
     const message = $("message").value;
-    if (!message.trim()) { log("Message is empty.", "err"); return; }
+    if (!message.trim()) { log("Message is empty.", "err"); $("startHint").textContent = "❌ Message is empty."; return; }
     sent = 0; failed = 0; $("cSent").textContent = 0; $("cFail").textContent = 0; $("progFill").style.width = "0%";
     socket.emit("start", {
       message, source: msgSource,
@@ -525,21 +772,23 @@
       perHour: Math.max(1, +$("perHour").value),
       dailyLimit: +$("limit").value,
     });
+    showView("campaign"); // progress dekhne ke liye campaign page pr le jao
   });
   $("stopBtn").addEventListener("click", () => socket.emit("stop"));
   $("dlBtn").addEventListener("click", () => (window.location = "/download"));
 
   let sentProfiles = 0;
   socket.on("send-start", (d) => {
-    total = d.total; $("cTotal").textContent = total;
+    total = d.total; $("cTotal").textContent = total; $("cTotal2").textContent = total;
     $("startBtn").style.display = "none"; $("stopBtn").style.display = "block"; $("dlBtn").style.display = "none";
+    $("campHint").textContent = "";
     // reset messaged-contacts grid
     sentProfiles = 0; $("sentGrid").innerHTML = ""; $("sentCount").textContent = 0; $("sentCard").style.display = "none";
     log(`Sending started — ${total} numbers`, "info");
   });
 
   // recipient profile (photo + naam) dikhao
-  socket.on("sent-profile", (p) => {
+  function renderSentProfile(p) {
     $("sentCard").style.display = "block";
     $("sentCount").textContent = ++sentProfiles;
     const item = document.createElement("div"); item.className = "sent-item";
@@ -550,6 +799,27 @@
     nm.title = p.name || "";
     item.appendChild(av); item.appendChild(nm);
     $("sentGrid").appendChild(item);
+  }
+  socket.on("sent-profile", renderSentProfile);
+
+  // refresh ke baad campaign progress wapas (server buffer se) — reset na ho
+  socket.on("campaign-state", (c) => {
+    if (!c) return;
+    total = c.total || 0; sent = c.sent || 0; failed = c.failed || 0;
+    $("cTotal").textContent = total; $("cTotal2").textContent = total;
+    $("cSent").textContent = sent; $("cFail").textContent = failed;
+    const done = sent + failed;
+    $("progFill").style.width = total ? ((done / total) * 100).toFixed(1) + "%" : "0%";
+    // messaged contacts grid rebuild
+    sentProfiles = 0; $("sentGrid").innerHTML = ""; $("sentCount").textContent = 0; $("sentCard").style.display = "none";
+    (c.profiles || []).forEach(renderSentProfile);
+    if (c.active) {
+      $("startBtn").style.display = "none"; $("stopBtn").style.display = "block"; $("dlBtn").style.display = "none";
+      $("campHint").textContent = "Sending in progress…";
+    } else if (c.done) {
+      $("startBtn").style.display = "block"; $("stopBtn").style.display = "none"; $("dlBtn").style.display = "block";
+      $("campHint").textContent = `🎉 Done! Sent: ${sent} · Failed: ${failed}. Download the result below.`;
+    }
   });
   socket.on("progress", (p) => {
     const ok = p.status.includes("✅");
@@ -561,6 +831,7 @@
   socket.on("done", (d) => {
     log(`🎉 Done! Sent: ${d.sent} | Failed: ${d.failed}`, "ok");
     $("startBtn").style.display = "block"; $("stopBtn").style.display = "none"; $("dlBtn").style.display = "block";
+    $("campHint").textContent = `🎉 Done! Sent: ${d.sent} · Failed: ${d.failed}. Download the result below.`;
   });
 </script>
 </body>

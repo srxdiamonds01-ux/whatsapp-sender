@@ -47,8 +47,9 @@
   .danger { border-color: #ef4444; }
   .danger h2 { color: #ef4444; margin-top: 0; }
   .quote { font-style: italic; white-space: pre-wrap; }
-  a.back { display: inline-block; margin-top: 26px; background: var(--accent-grad); color: var(--on-accent);
-    text-decoration: none; padding: 11px 20px; border-radius: 10px; font-weight: 600; font-size: 14px; }
+  .back { display: inline-block; margin-top: 26px; background: var(--accent-grad); color: var(--on-accent);
+    text-decoration: none; padding: 11px 20px; border-radius: 10px; font-weight: 600; font-size: 14px;
+    border: none; cursor: pointer; font-family: inherit; }
   .sign { margin-top: 22px; color: var(--muted); font-size: 13px; }
   .footer { text-align: center; color: var(--muted); font-size: 12px; margin: 18px 0 4px; }
   .footer b { background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800; }
@@ -118,7 +119,7 @@ Thank you for choosing SRX Diamonds.</div>
       <div class="sign">By continuing to use this software, you confirm that you have read and agree to these Terms &amp; Conditions.<br />
       — best regards, Sunny Kumar 😊</div>
 
-      <a class="back" href="/login">← Back to Login</a>
+      <button class="back" type="button" onclick="window.close()">✕ Close</button>
     </div>
     <div class="footer">Powered by <b>SUGGO</b> · <a href="https://srxdiamonds.com" target="_blank">srxdiamonds.com</a></div>
   </div>
